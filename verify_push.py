@@ -99,10 +99,10 @@ def verify_manual_push():
     # Spacing and sizing
     PADDING = 30
     ELEMENT_HEIGHT = 85
-    TITLE_HEIGHT = 85
+    TITLE_HEIGHT = 54
     
     # Fixed window size (including custom title bar)
-    window_width = 750
+    window_width = 700
     window_height = 375 + TITLE_HEIGHT
     
     # Center the window
@@ -127,26 +127,7 @@ def verify_manual_push():
     )
     title_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
     
-    # Close button (X) on the right
-    close_btn = tk.Button(
-        title_bar,
-        text="✕",
-        command=lambda: on_cancel(),
-        font=("Segoe UI", 12),
-        bg=colors['surface'],
-        fg=colors['text'],
-        activebackground="#c42b1c",
-        activeforeground="white",
-        relief=tk.FLAT,
-        bd=0,
-        width=5,
-        cursor="hand2"
-    )
-    close_btn.pack(side=tk.RIGHT, fill=tk.Y)
-    close_btn.bind("<Enter>", lambda e: close_btn.config(bg="#c42b1c", fg="white"))
-    close_btn.bind("<Leave>", lambda e: close_btn.config(bg=colors['surface'], fg=colors['text']))
-    
-    # Minimize button
+    # Minimize button only (no close button)
     def minimize_window():
         root.overrideredirect(False)
         root.iconify()
