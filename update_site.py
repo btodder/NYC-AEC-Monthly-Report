@@ -75,7 +75,7 @@ def format_content_to_html(text):
         
     return "".join(html_output)
 
-def update_html(sections):
+def update_html(sections, report_date_str=None):
     with open(INDEX_FILE, 'r', encoding='utf-8') as f:
         html = f.read()
 
@@ -94,6 +94,10 @@ def update_html(sections):
     # Update Timestamp
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     html = re.sub(r'(<div id="last-updated">).*?(</div>)', f'\\1Last Updated: {timestamp}\\2', html, flags=re.DOTALL)
+
+    # Update Report Month if provided
+    if report_date_str:
+         html = re.sub(r'(<div id="report-month">).*?(</div>)', f'\\1{report_date_str}\\2', html, flags=re.DOTALL)
 
     with open(INDEX_FILE, 'w', encoding='utf-8') as f:
         f.write(html)
@@ -122,7 +126,19 @@ def main():
     print(f"Processing report: {latest_file}")
     try:
         sections = parse_report(latest_file)
-        update_html(sections)
+        
+        # Extract date from filename
+        basename = os.path.basename(latest_file)
+        report_date_str = None
+        date_match = re.search(r'(\d{4}-\d{2}-\d{2})', basename)
+        if date_match:
+            try:
+                dt = datetime.strptime(date_match.group(1), '%Y-%m-%d')
+                report_date_str = dt.strftime('%B %d, %Y')
+            except ValueError:
+                pass
+
+        update_html(sections, report_date_str)
         
         # Git operations
         git_deploy()
