@@ -2,6 +2,16 @@ import tkinter as tk
 import sys
 import subprocess
 import os
+import ctypes
+
+# Enable DPI awareness for crisp rendering on high-res displays
+try:
+    ctypes.windll.shcore.SetProcessDpiAwareness(2)  # Per-monitor DPI aware
+except:
+    try:
+        ctypes.windll.user32.SetProcessDPIAware()  # Fallback
+    except:
+        pass
 
 def get_windows_theme():
     """Detect Windows theme (light/dark) via registry."""
@@ -23,7 +33,7 @@ def get_theme_colors(theme):
             'surface': '#2d2d2d',
             'text': '#ffffff',
             'subtext': '#b4b4b4',
-            'accent': '#0078d4',  # Windows blue - good contrast with white
+            'accent': '#0078d4',
             'accent_hover': '#1a86d9',
             'cancel': '#484848',
             'cancel_hover': '#5a5a5a',
@@ -45,7 +55,6 @@ def get_theme_colors(theme):
 def apply_dark_title_bar(root):
     """Apply dark title bar on Windows 10/11."""
     try:
-        import ctypes
         root.update()
         hwnd = ctypes.windll.user32.GetParent(root.winfo_id())
         value = ctypes.c_int(1)
@@ -82,12 +91,12 @@ def verify_manual_push():
     colors = get_theme_colors(theme)
     
     root = tk.Tk()
-    root.title("")  # Empty title bar text
+    root.title("Git Push Detected, Review Commit Message:")  # Title bar text
     root.configure(bg=colors['bg'])
     
     # Fixed window size - not resizable
-    window_width = 480
-    window_height = 180
+    window_width = 500
+    window_height = 140
     root.resizable(False, False)
     
     # Center the window
@@ -105,19 +114,9 @@ def verify_manual_push():
     container = tk.Frame(root, bg=colors['surface'], relief=tk.FLAT, bd=0)
     container.pack(fill=tk.BOTH, expand=True, padx=1, pady=1)
     
-    # Single line header
-    header = tk.Label(
-        container,
-        text="Git Push Detected, Review Commit Message:",
-        font=("Segoe UI", 11),
-        bg=colors['surface'],
-        fg=colors['text']
-    )
-    header.pack(pady=(25, 15))
-    
-    # Entry field with border - use fixed padding for consistent width
+    # Entry field with border
     entry_frame = tk.Frame(container, bg=colors['border'], relief=tk.FLAT, bd=0)
-    entry_frame.pack(padx=40, fill=tk.X)
+    entry_frame.pack(padx=30, pady=(25, 0), fill=tk.X)
     
     entry = tk.Entry(
         entry_frame,
@@ -143,9 +142,9 @@ def verify_manual_push():
         result_dict['approved'] = False
         root.destroy()
     
-    # Button frame - same padding as entry field to match widths
+    # Button frame - same padding as entry field
     btn_frame = tk.Frame(container, bg=colors['surface'])
-    btn_frame.pack(padx=40, pady=(15, 25), fill=tk.X)
+    btn_frame.pack(padx=30, pady=(15, 25), fill=tk.X)
     
     # Buttons that fill the frame width equally
     confirm_btn = tk.Button(
