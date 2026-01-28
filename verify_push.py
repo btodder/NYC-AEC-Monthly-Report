@@ -142,7 +142,14 @@ def verify_manual_push():
     def minimize_window():
         root.overrideredirect(False)
         root.iconify()
-        root.after(100, lambda: root.overrideredirect(True))
+        
+        def restore_window(event=None):
+            if root.state() == 'iconic':
+                return  # Still minimized
+            root.overrideredirect(True)
+            root.unbind('<Map>')
+        
+        root.bind('<Map>', restore_window)
     
     min_btn = ctk.CTkButton(
         title_bar,
