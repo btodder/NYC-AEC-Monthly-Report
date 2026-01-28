@@ -94,12 +94,13 @@ def verify_manual_push():
     
     root = tk.Tk()
     root.overrideredirect(True)  # Remove default title bar
-    root.configure(bg=colors['surface'])
+    root.configure(bg=colors['border'])  # Border color as background
     
     # Spacing and sizing
     PADDING = 30
     ELEMENT_HEIGHT = 85
     TITLE_HEIGHT = 54
+    BORDER_WIDTH = 2
     
     # Fixed window size (including custom title bar)
     window_width = 700
@@ -112,8 +113,21 @@ def verify_manual_push():
     y = (screen_height - window_height) // 2
     root.geometry(f"{window_width}x{window_height}+{x}+{y}")
     
+    # Apply rounded corners on Windows 11
+    try:
+        hwnd = ctypes.windll.user32.GetParent(root.winfo_id())
+        # DWMWCP_ROUND = 2 (8px radius)
+        value = ctypes.c_int(2)
+        ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, 33, ctypes.byref(value), ctypes.sizeof(value))
+    except:
+        pass
+    
+    # Main wrapper with border
+    main_frame = tk.Frame(root, bg=colors['surface'])
+    main_frame.pack(fill=tk.BOTH, expand=True, padx=BORDER_WIDTH, pady=BORDER_WIDTH)
+    
     # Custom title bar
-    title_bar = tk.Frame(root, bg=colors['surface'], height=TITLE_HEIGHT)
+    title_bar = tk.Frame(main_frame, bg=colors['surface'], height=TITLE_HEIGHT - BORDER_WIDTH)
     title_bar.pack(fill=tk.X, side=tk.TOP)
     title_bar.pack_propagate(False)
     
@@ -167,7 +181,7 @@ def verify_manual_push():
     title_label.bind("<B1-Motion>", do_drag)
     
     # Main container fills window - slightly darker background
-    container = tk.Frame(root, bg=colors['surface_dark'])
+    container = tk.Frame(main_frame, bg=colors['surface_dark'])
     container.pack(fill=tk.BOTH, expand=True)
     
     # Configure grid for vertical centering
@@ -251,7 +265,7 @@ def verify_manual_push():
         bd=0
     )
     cancel_btn.grid(row=0, column=2, sticky="nsew")
-    cancel_btn.bind("<Enter>", lambda e: cancel_btn.config(bg=colors['cancel_hover']))
+    cancel_btn.bind("<Enter>", lambda e: cancel_btn.config(bg="#c42b1c"))  # Red like close button
     cancel_btn.bind("<Leave>", lambda e: cancel_btn.config(bg=colors['cancel']))
     
     # Bind keys
