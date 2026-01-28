@@ -81,6 +81,15 @@ section {
     section {
         grid-column: span 6;
     }
+
+    /* Extra spacing gutter as requested */
+    section:nth-of-type(odd) {
+        padding-right: var(--spacing-unit);
+    }
+
+    section:nth-of-type(even) {
+        padding-left: var(--spacing-unit);
+    }
 }
 
 h2 {
