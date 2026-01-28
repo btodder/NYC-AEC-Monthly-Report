@@ -375,7 +375,7 @@ footer #last-updated {
 
 .chart-label {
     position: absolute;
-    bottom: -25px;
+    top: -25px;
     font-size: 0.75rem;
     text-transform: uppercase;
     color: #666;
