@@ -314,13 +314,25 @@ footer #last-updated {
 }
 
 /* ABI Chart Styles */
+#abi-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    align-items: center;
+}
+
+#abi-content ul {
+    flex: 1;
+    min-width: 300px;
+}
+
 .abi-chart-container {
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
     height: 200px;
     width: 30%;
-    margin-bottom: 2rem;
+    min-width: 250px;
     position: relative;
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     border: 1px solid #000;
