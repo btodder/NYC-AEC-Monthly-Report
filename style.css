@@ -72,161 +72,6 @@ section {
 }
 
 /* Tablet/Desktop adjustments */
-/* Tablet/Desktop adjustments */
-@media (min-width: 768px) {
-    section {
-        grid-column: span 6;
-    }
-}
-
-h2 {
-    grid-column: 1 / -1;
-    font-size: 1.5rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    border-top: var(--line-weight) solid var(--text-color);
-    padding-top: 1rem;
-    margin-bottom: 1.5rem;
-    letter-spacing: -0.5px;
-}
-
-/* Content Styling */
-.content-block {
-    grid-column: 1 / -1;
-}
-
-p {
-    margin-bottom: 1rem;
-    max-width: 65ch;
-}
-
-
-
-/* Data Tables & Lists */
-ul {
-    list-style: none;
-}
-
-li {
-    margin-bottom: 0.5rem;
-    padding-left: 1.5rem;
-    position: relative;
-}
-
-li::before {
-    content: "→";
-    position: absolute;
-    left: 0;
-    color: var(--accent-color);
-    font-weight: bold;
-}
-
-/* Monospace for data-heavy sections */
-.data-font,
-.filings p,
-.rates p {
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 0.95rem;
-}
-
-/* Utility to highlight keywords if needed */
-.highlight {
-    background-color: var(--accent-color);
-    color: white;
-    padding: 0 4px;
-}
-
-footer {
-    grid-column: 1 / -1;
-    margin-top: 1rem;
-    padding-top: 2rem;
-    border-top: 1px solid #ccc;
-    font-size: 0.8rem;
-    color: #666;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-}
-
-footer p {
-    margin-bottom: 0;
-}
-
-/* Swiss Style Design System */
-:root {
-    --bg-color: #ffffff;
-    --text-color: #000000;
-    --accent-color: #ff3300;
-    /* Swiss Red */
-    --line-weight: 2px;
-}
-
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
-
-body {
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    line-height: 1.4;
-    -webkit-font-smoothing: antialiased;
-    font-size: 16px;
-    padding: 2rem;
-}
-
-/* Grid Layout */
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: repeat(12, 1fr);
-    grid-gap: 20px;
-}
-
-/* Header */
-header {
-    grid-column: 1 / -1;
-    border-bottom: var(--line-weight) solid var(--text-color);
-    padding-bottom: 1rem;
-    margin-bottom: 1rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-}
-
-h1 {
-    font-size: 4rem;
-    font-weight: 700;
-    letter-spacing: -2px;
-    line-height: 0.9;
-    text-transform: uppercase;
-}
-
-
-
-#report-month {
-    font-size: 4rem;
-    font-weight: 700;
-    letter-spacing: -2px;
-    line-height: 0.9;
-    text-transform: uppercase;
-    text-align: right;
-}
-
-/* Sections */
-section {
-    grid-column: span 12;
-    margin-bottom: 2rem;
-    display: grid;
-    grid-template-columns: repeat(12, 1fr);
-    gap: 20px;
-}
-
-/* Tablet/Desktop adjustments */
-/* Tablet/Desktop adjustments */
 @media (min-width: 768px) {
     section {
         grid-column: span 6;
@@ -313,7 +158,10 @@ footer #last-updated {
     color: var(--text-color);
 }
 
-/* ABI Chart Styles */
+/* =========================================
+   ABI Chart Styles 
+   ========================================= */
+
 #abi-content {
     display: flex;
     flex-wrap: wrap;
@@ -339,7 +187,6 @@ footer #last-updated {
     padding: 1rem;
     background: transparent;
     margin-top: 20px;
-    /* Space for the top labels */
 }
 
 .chart-baseline {
@@ -363,7 +210,6 @@ footer #last-updated {
 
 .chart-bar {
     width: 26px;
-    /* Approx width of 3 uppercase letters at 0.75rem */
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
@@ -392,7 +238,6 @@ footer #last-updated {
 .chart-label {
     position: absolute;
     bottom: calc(100% + 1.2rem);
-    /* 1rem padding + ~2px gap */
     width: 100%;
     text-align: center;
     font-size: 0.75rem;
@@ -407,4 +252,13 @@ footer #last-updated {
     font-weight: bold;
     width: 100%;
     text-align: center;
+}
+
+.chart-explainer {
+    font-size: 0.75rem;
+    color: #777;
+    margin-top: 1rem;
+    font-style: italic;
+    line-height: 1.4;
+    width: 100%;
 }
