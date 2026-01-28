@@ -96,7 +96,7 @@ def verify_manual_push():
     
     # Fixed window size - not resizable
     window_width = 750
-    window_height = 465
+    window_height = 375
     root.resizable(False, False)
     
     # Center the window
@@ -116,18 +116,19 @@ def verify_manual_push():
     
     # Uniform spacing value
     SPACING = 30
+    ELEMENT_HEIGHT = 50
     
     # Content frame for vertical centering
     content_frame = tk.Frame(container, bg=colors['surface'])
     content_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
     
     # Entry field with border
-    entry_frame = tk.Frame(content_frame, bg=colors['border'], relief=tk.FLAT, bd=0, width=window_width - (SPACING * 2))
+    entry_frame = tk.Frame(content_frame, bg=colors['border'], relief=tk.FLAT, bd=0)
     entry_frame.pack(padx=0, pady=(0, SPACING), fill=tk.X)
     entry_frame.pack_propagate(False)
     
-    # Set entry frame width explicitly
-    entry_frame.configure(width=window_width - (SPACING * 2) - 2, height=40)
+    # Set entry frame dimensions - height matches buttons
+    entry_frame.configure(width=window_width - (SPACING * 2) - 2, height=ELEMENT_HEIGHT)
     
     entry = tk.Entry(
         entry_frame,
@@ -157,12 +158,15 @@ def verify_manual_push():
     btn_frame = tk.Frame(content_frame, bg=colors['surface'], width=window_width - (SPACING * 2) - 2)
     btn_frame.pack(padx=0, fill=tk.X)
     
-    # Buttons that fill the frame width equally
+    # Calculate button width: (total width - gap) / 2
+    button_width = (window_width - (SPACING * 2) - 2 - SPACING) // 2
+    
+    # Confirm button - no bold, fixed height
     confirm_btn = tk.Button(
         btn_frame,
         text="Confirm",
         command=on_confirm,
-        font=("Segoe UI", 10, "bold"),
+        font=("Segoe UI", 10),
         bg=colors['accent'],
         fg="white",
         activebackground=colors['accent_hover'],
@@ -170,17 +174,19 @@ def verify_manual_push():
         relief=tk.FLAT,
         cursor="hand2",
         bd=0,
-        pady=10
+        width=button_width // 8,
+        height=2
     )
-    confirm_btn.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
+    confirm_btn.pack(side=tk.LEFT, padx=(0, SPACING // 2))
     confirm_btn.bind("<Enter>", lambda e: confirm_btn.config(bg=colors['accent_hover']))
     confirm_btn.bind("<Leave>", lambda e: confirm_btn.config(bg=colors['accent']))
     
+    # Cancel button - no bold, fixed height
     cancel_btn = tk.Button(
         btn_frame,
         text="Cancel",
         command=on_cancel,
-        font=("Segoe UI", 10, "bold"),
+        font=("Segoe UI", 10),
         bg=colors['cancel'],
         fg="white",
         activebackground=colors['cancel_hover'],
@@ -188,9 +194,10 @@ def verify_manual_push():
         relief=tk.FLAT,
         cursor="hand2",
         bd=0,
-        pady=10
+        width=button_width // 8,
+        height=2
     )
-    cancel_btn.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(5, 0))
+    cancel_btn.pack(side=tk.LEFT, padx=(SPACING // 2, 0))
     cancel_btn.bind("<Enter>", lambda e: cancel_btn.config(bg=colors['cancel_hover']))
     cancel_btn.bind("<Leave>", lambda e: cancel_btn.config(bg=colors['cancel']))
     
