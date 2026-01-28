@@ -114,13 +114,19 @@ def verify_manual_push():
     root.geometry(f"{window_width}x{window_height}+{x}+{y}")
     
     # Apply rounded corners on Windows 11
+    root.update()  # Ensure window exists before getting handle
     try:
+        import ctypes.wintypes
         hwnd = ctypes.windll.user32.GetParent(root.winfo_id())
-        # DWMWCP_ROUND = 2 (8px radius)
-        value = ctypes.c_int(2)
-        ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, 33, ctypes.byref(value), ctypes.sizeof(value))
-    except:
-        pass
+        if hwnd == 0:
+            hwnd = root.winfo_id()
+        # DWMWA_WINDOW_CORNER_PREFERENCE = 33, DWMWCP_ROUND = 2
+        preference = ctypes.c_int(2)
+        ctypes.windll.dwmapi.DwmSetWindowAttribute(
+            hwnd, 33, ctypes.byref(preference), ctypes.sizeof(preference)
+        )
+    except Exception as e:
+        print(f"Rounded corners not applied: {e}")
     
     # Main wrapper with border
     main_frame = tk.Frame(root, bg=colors['surface'])
