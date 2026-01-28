@@ -27,22 +27,67 @@ def verify_manual_push():
     result_dict = {'approved': False, 'message': original_message}
     
     root = tk.Tk()
-    root.title("Manual Push Detected")
+    root.title("Git Push")
+    
+    # Windows 11 color scheme
+    BG_COLOR = "#f3f3f3"
+    SURFACE_COLOR = "#ffffff"
+    TEXT_COLOR = "#1f1f1f"
+    ACCENT_COLOR = "#0067c0"
+    BUTTON_HOVER = "#005a9e"
+    CANCEL_COLOR = "#8a8a8a"
+    CANCEL_HOVER = "#737373"
+    
+    root.configure(bg=BG_COLOR)
     
     # Center the window
-    window_width = 400
-    window_height = 150
+    window_width = 500
+    window_height = 180
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
     x = (screen_width - window_width) // 2
     y = (screen_height - window_height) // 2
     root.geometry(f"{window_width}x{window_height}+{x}+{y}")
     
-    tk.Label(root, text="Commit Message:", font=("Arial", 10)).pack(pady=(10, 5))
+    # Main container with padding
+    container = tk.Frame(root, bg=SURFACE_COLOR, relief=tk.FLAT)
+    container.pack(fill=tk.BOTH, expand=True, padx=1, pady=1)
     
-    entry = tk.Entry(root, width=50)
+    # Header
+    header = tk.Label(
+        container,
+        text="Manual Push Detected",
+        font=("Segoe UI", 12, "bold"),
+        bg=SURFACE_COLOR,
+        fg=TEXT_COLOR
+    )
+    header.pack(pady=(20, 5))
+    
+    # Subheader
+    subheader = tk.Label(
+        container,
+        text="Review and edit the commit message before pushing:",
+        font=("Segoe UI", 9),
+        bg=SURFACE_COLOR,
+        fg="#5f5f5f"
+    )
+    subheader.pack(pady=(0, 15))
+    
+    # Entry field with border
+    entry_frame = tk.Frame(container, bg="#e5e5e5", relief=tk.FLAT)
+    entry_frame.pack(padx=30, pady=(0, 20), fill=tk.X)
+    
+    entry = tk.Entry(
+        entry_frame,
+        font=("Segoe UI", 10),
+        bg=SURFACE_COLOR,
+        fg=TEXT_COLOR,
+        relief=tk.FLAT,
+        insertbackground=TEXT_COLOR,
+        bd=0
+    )
+    entry.pack(padx=1, pady=1, fill=tk.X, ipady=6)
     entry.insert(0, original_message)
-    entry.pack(pady=5)
     entry.focus_set()
     
     def on_approve():
@@ -53,12 +98,46 @@ def verify_manual_push():
     def on_reject():
         result_dict['approved'] = False
         root.destroy()
-        
-    btn_frame = tk.Frame(root)
-    btn_frame.pack(pady=10)
     
-    tk.Button(btn_frame, text="Push", command=on_approve, bg="#4caf50", fg="white", width=10).pack(side=tk.LEFT, padx=10)
-    tk.Button(btn_frame, text="Cancel", command=on_reject, bg="#f44336", fg="white", width=10).pack(side=tk.LEFT, padx=10)
+    # Button frame
+    btn_frame = tk.Frame(container, bg=SURFACE_COLOR)
+    btn_frame.pack(pady=(0, 20))
+    
+    # Push button
+    push_btn = tk.Button(
+        btn_frame,
+        text="Push",
+        command=on_approve,
+        font=("Segoe UI", 9),
+        bg=ACCENT_COLOR,
+        fg="white",
+        activebackground=BUTTON_HOVER,
+        activeforeground="white",
+        relief=tk.FLAT,
+        cursor="hand2",
+        bd=0,
+        padx=30,
+        pady=8
+    )
+    push_btn.pack(side=tk.LEFT, padx=5)
+    
+    # Cancel button
+    cancel_btn = tk.Button(
+        btn_frame,
+        text="Cancel",
+        command=on_reject,
+        font=("Segoe UI", 9),
+        bg=CANCEL_COLOR,
+        fg="white",
+        activebackground=CANCEL_HOVER,
+        activeforeground="white",
+        relief=tk.FLAT,
+        cursor="hand2",
+        bd=0,
+        padx=30,
+        pady=8
+    )
+    cancel_btn.pack(side=tk.LEFT, padx=5)
     
     # Bind keys
     root.bind('<Return>', lambda e: on_approve())

@@ -266,22 +266,67 @@ def get_user_approval(default_message):
     result = {'approved': False, 'message': None}
     
     root = tk.Tk()
-    root.title("Confirm Deployment")
+    root.title("Deploy Report")
+    
+    # Windows 11 color scheme
+    BG_COLOR = "#f3f3f3"
+    SURFACE_COLOR = "#ffffff"
+    TEXT_COLOR = "#1f1f1f"
+    ACCENT_COLOR = "#0067c0"
+    BUTTON_HOVER = "#005a9e"
+    CANCEL_COLOR = "#8a8a8a"
+    CANCEL_HOVER = "#737373"
+    
+    root.configure(bg=BG_COLOR)
     
     # Center the window
-    window_width = 400
-    window_height = 150
+    window_width = 500
+    window_height = 180
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
     x = (screen_width - window_width) // 2
     y = (screen_height - window_height) // 2
     root.geometry(f"{window_width}x{window_height}+{x}+{y}")
     
-    tk.Label(root, text="Proposed Commit Message:", font=("Arial", 10)).pack(pady=(10, 5))
+    # Main container with padding
+    container = tk.Frame(root, bg=SURFACE_COLOR, relief=tk.FLAT)
+    container.pack(fill=tk.BOTH, expand=True, padx=1, pady=1)
     
-    entry = tk.Entry(root, width=50)
+    # Header
+    header = tk.Label(
+        container,
+        text="Confirm Deployment",
+        font=("Segoe UI", 12, "bold"),
+        bg=SURFACE_COLOR,
+        fg=TEXT_COLOR
+    )
+    header.pack(pady=(20, 5))
+    
+    # Subheader
+    subheader = tk.Label(
+        container,
+        text="Review and edit the commit message before deploying:",
+        font=("Segoe UI", 9),
+        bg=SURFACE_COLOR,
+        fg="#5f5f5f"
+    )
+    subheader.pack(pady=(0, 15))
+    
+    # Entry field with border
+    entry_frame = tk.Frame(container, bg="#e5e5e5", relief=tk.FLAT)
+    entry_frame.pack(padx=30, pady=(0, 20), fill=tk.X)
+    
+    entry = tk.Entry(
+        entry_frame,
+        font=("Segoe UI", 10),
+        bg=SURFACE_COLOR,
+        fg=TEXT_COLOR,
+        relief=tk.FLAT,
+        insertbackground=TEXT_COLOR,
+        bd=0
+    )
+    entry.pack(padx=1, pady=1, fill=tk.X, ipady=6)
     entry.insert(0, default_message)
-    entry.pack(pady=5)
     entry.focus_set()
     
     def on_confirm():
@@ -292,12 +337,46 @@ def get_user_approval(default_message):
     def on_cancel():
         result['approved'] = False
         root.destroy()
-        
-    btn_frame = tk.Frame(root)
-    btn_frame.pack(pady=10)
     
-    tk.Button(btn_frame, text="Deploy", command=on_confirm, bg="#dddddd", width=10).pack(side=tk.LEFT, padx=10)
-    tk.Button(btn_frame, text="Cancel", command=on_cancel, bg="#dddddd", width=10).pack(side=tk.LEFT, padx=10)
+    # Button frame
+    btn_frame = tk.Frame(container, bg=SURFACE_COLOR)
+    btn_frame.pack(pady=(0, 20))
+    
+    # Deploy button
+    deploy_btn = tk.Button(
+        btn_frame,
+        text="Deploy",
+        command=on_confirm,
+        font=("Segoe UI", 9),
+        bg=ACCENT_COLOR,
+        fg="white",
+        activebackground=BUTTON_HOVER,
+        activeforeground="white",
+        relief=tk.FLAT,
+        cursor="hand2",
+        bd=0,
+        padx=30,
+        pady=8
+    )
+    deploy_btn.pack(side=tk.LEFT, padx=5)
+    
+    # Cancel button
+    cancel_btn = tk.Button(
+        btn_frame,
+        text="Cancel",
+        command=on_cancel,
+        font=("Segoe UI", 9),
+        bg=CANCEL_COLOR,
+        fg="white",
+        activebackground=CANCEL_HOVER,
+        activeforeground="white",
+        relief=tk.FLAT,
+        cursor="hand2",
+        bd=0,
+        padx=30,
+        pady=8
+    )
+    cancel_btn.pack(side=tk.LEFT, padx=5)
     
     # Bind Enter and Escape keys
     root.bind('<Return>', lambda e: on_confirm())
