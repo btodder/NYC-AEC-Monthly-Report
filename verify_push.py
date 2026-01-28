@@ -94,8 +94,8 @@ def verify_manual_push():
     # Spacing and sizing (scaled to 2/3, text unchanged)
     PADDING = 20
     ELEMENT_HEIGHT = 57
-    TITLE_HEIGHT = 36
-    BORDER_WIDTH = 2
+    TITLE_HEIGHT = 48
+    BORDER_WIDTH = 1  # 2/3 of 2
     CORNER_RADIUS = 3
     
     # Fixed window size (scaled to 2/3)
@@ -191,7 +191,7 @@ def verify_manual_push():
         fg_color=colors['surface'],
         text_color=colors['text'],
         border_color=colors['border'],
-        border_width=2,
+        border_width=1,
         height=ELEMENT_HEIGHT,
         corner_radius=CORNER_RADIUS,
         justify="center"
