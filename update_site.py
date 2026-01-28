@@ -23,27 +23,32 @@ def get_latest_report():
 def parse_report(file_path):
     with open(file_path, 'r', encoding='utf-8') as f:
         content = f.read()
-    
+
     sections = {}
+    
+    # Headers regex patterns
+    # Support both [HEADER] and **Header** formats
+    h_filings = r'(?:\[FILINGS\]|\*\*Filings & Permits\*\*)'
+    h_abi = r'(?:\[ABI\]|\*\*ABI \(Northeast\)\*\*)'
+    h_rates = r'(?:\[RATES\]|\*\*Rates & Incentives\*\*)'
+    h_takeaways = r'(?:\[TAKEAWAYS\]|\*\*Key Takeaways\*\*)'
+    
+    # Lookahead for any header or end of string
+    any_header = f'(?:{h_filings}|{h_abi}|{h_rates}|{h_takeaways}|$)'
+
+    filings_match = re.search(rf'{h_filings}\s*(.*?)\s*(?={any_header})', content, re.DOTALL | re.IGNORECASE)
+    abi_match = re.search(rf'{h_abi}\s*(.*?)\s*(?={any_header})', content, re.DOTALL | re.IGNORECASE)
+    rates_match = re.search(rf'{h_rates}\s*(.*?)\s*(?={any_header})', content, re.DOTALL | re.IGNORECASE)
+    takeaways_match = re.search(rf'{h_takeaways}\s*(.*?)\s*(?={any_header})', content, re.DOTALL | re.IGNORECASE)
+
+    sections['filings'] = filings_match.group(1).strip() if filings_match else "No data provided."
+    sections['abi'] = abi_match.group(1).strip() if abi_match else "No data provided."
+    sections['rates'] = rates_match.group(1).strip() if rates_match else "No data provided."
+    sections['takeaways'] = takeaways_match.group(1).strip() if takeaways_match else "No data provided."
     
     # Extract Title (First line)
     title_match = re.search(r'^(.*)', content)
     sections['title'] = title_match.group(1) if title_match else "NYC AEC Monthly Report"
-    
-    # Helper to extract sections between headers
-    def extract_section(header_num, header_name):
-        pattern = rf'(?m)^{header_num}: \*\*?{header_name}\*\*?(.*?)(?=^\d+:|\Z)'
-        match = re.search(pattern, content, re.DOTALL)
-        return match.group(1).strip() if match else ""
-    
-    sections['filings'] = extract_section('1', 'New Building Filings')
-    sections['abi'] = extract_section('9', 'ABI \(Northeast\)') # Number might change, using 9 per sample
-    sections['rates'] = extract_section('10', 'Rates')
-    sections['takeaways'] = extract_section('11', 'Key Takeaways')
-    
-    # Fallback if numbering is different (The sample used 1, 9, 10, 11)
-    # If the user changes numbering, this regex might need adjustment.
-    # For now, it matches the provided "9: **ABI (Northeast)**" format.
     
     return sections
 
