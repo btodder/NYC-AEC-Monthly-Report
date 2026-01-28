@@ -91,16 +91,16 @@ def verify_manual_push():
     root.overrideredirect(True)
     root.configure(fg_color=colors['border'])
     
-    # Spacing and sizing
-    PADDING = 30
-    ELEMENT_HEIGHT = 85
-    TITLE_HEIGHT = 54
+    # Spacing and sizing (scaled to 2/3, text unchanged)
+    PADDING = 20
+    ELEMENT_HEIGHT = 57
+    TITLE_HEIGHT = 36
     BORDER_WIDTH = 2
-    CORNER_RADIUS = 4
+    CORNER_RADIUS = 3
     
-    # Fixed window size
-    window_width = 700
-    window_height = 375 + TITLE_HEIGHT
+    # Fixed window size (scaled to 2/3)
+    window_width = 467
+    window_height = 250 + TITLE_HEIGHT
     
     # Center the window
     screen_width = root.winfo_screenwidth()
