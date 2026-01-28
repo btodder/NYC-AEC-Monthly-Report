@@ -91,13 +91,17 @@ def verify_manual_push():
     colors = get_theme_colors(theme)
     
     root = tk.Tk()
-    root.title("Git Push Detected, Review Commit Message:")
+    root.overrideredirect(True)  # Remove default title bar
     root.configure(bg=colors['surface'])
     
-    # Fixed window size
+    # Spacing and sizing
+    PADDING = 30
+    ELEMENT_HEIGHT = 85
+    TITLE_HEIGHT = 85
+    
+    # Fixed window size (including custom title bar)
     window_width = 750
-    window_height = 375
-    root.resizable(False, False)
+    window_height = 375 + TITLE_HEIGHT
     
     # Center the window
     screen_width = root.winfo_screenwidth()
@@ -106,13 +110,54 @@ def verify_manual_push():
     y = (screen_height - window_height) // 2
     root.geometry(f"{window_width}x{window_height}+{x}+{y}")
     
-    # Apply dark title bar
-    if theme == "dark":
-        apply_dark_title_bar(root)
+    # Custom title bar
+    title_bar = tk.Frame(root, bg=colors['surface'], height=TITLE_HEIGHT)
+    title_bar.pack(fill=tk.X, side=tk.TOP)
+    title_bar.pack_propagate(False)
     
-    # Spacing and sizing
-    PADDING = 30
-    ELEMENT_HEIGHT = 88
+    # Title text - centered, matching font size
+    title_label = tk.Label(
+        title_bar,
+        text="Git Push Detected, Review Commit Message:",
+        font=("Segoe UI", 11),
+        bg=colors['surface'],
+        fg=colors['text']
+    )
+    title_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+    
+    # Close button (X) on the right
+    close_btn = tk.Button(
+        title_bar,
+        text="✕",
+        command=lambda: on_cancel(),
+        font=("Segoe UI", 12),
+        bg=colors['surface'],
+        fg=colors['text'],
+        activebackground="#c42b1c",
+        activeforeground="white",
+        relief=tk.FLAT,
+        bd=0,
+        width=5,
+        cursor="hand2"
+    )
+    close_btn.pack(side=tk.RIGHT, fill=tk.Y)
+    close_btn.bind("<Enter>", lambda e: close_btn.config(bg="#c42b1c", fg="white"))
+    close_btn.bind("<Leave>", lambda e: close_btn.config(bg=colors['surface'], fg=colors['text']))
+    
+    # Make title bar draggable
+    def start_drag(event):
+        root._drag_x = event.x
+        root._drag_y = event.y
+    
+    def do_drag(event):
+        x = root.winfo_x() + event.x - root._drag_x
+        y = root.winfo_y() + event.y - root._drag_y
+        root.geometry(f"+{x}+{y}")
+    
+    title_bar.bind("<Button-1>", start_drag)
+    title_bar.bind("<B1-Motion>", do_drag)
+    title_label.bind("<Button-1>", start_drag)
+    title_label.bind("<B1-Motion>", do_drag)
     
     # Main container fills window
     container = tk.Frame(root, bg=colors['surface'])
@@ -140,7 +185,8 @@ def verify_manual_push():
         relief=tk.FLAT,
         insertbackground=colors['accent'],
         bd=0,
-        highlightthickness=0
+        highlightthickness=0,
+        justify=tk.CENTER  # Center text in entry
     )
     entry.grid(row=0, column=0, sticky="nsew", padx=1, pady=1)
     entry.insert(0, original_message)
