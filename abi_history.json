@@ -1,1 +1,22 @@
-[{"date": "OCT", "value": 48.5}, {"date": "NOV", "value": 49.2}, {"date": "DEC", "value": 47.8}, {"date": "JAN", "value": 45.1}]
+[
+    {
+        "month": "OCT",
+        "year": "2025",
+        "value": 48.5
+    },
+    {
+        "month": "NOV",
+        "year": "2025",
+        "value": 49.2
+    },
+    {
+        "month": "DEC",
+        "year": "2025",
+        "value": 45.3
+    },
+    {
+        "month": "JAN",
+        "year": "2026",
+        "value": 45.1
+    }
+]

@@ -93,23 +93,25 @@ def update_abi_history(report_date_str, abi_section_text):
     history = load_abi_history()
     
     # Append new entry
-    # Extract short month for label: "JAN<br>2026" -> "JAN"
-    month_label = report_date_str.split('<br>')[0] 
+    # Append new entry
+    # Extract short month and year: "JAN<br>2026" -> "JAN", "2026"
+    parts = report_date_str.split('<br>')
+    month_label = parts[0]
+    year_label = parts[1] if len(parts) > 1 else str(datetime.now().year)
     
-    # Check if duplicate date
-    if history and history[-1]['date'] == month_label:
-        return history # Don't duplicate
+    # Check if duplicate date (matches both month and year)
+    if history:
+        last = history[-1]
+        if last.get('month') == month_label and last.get('year') == year_label:
+            return history # Don't duplicate
 
     history.append({
-        'date': month_label,
+        'month': month_label,
+        'year': year_label,
         'value': new_value
     })
     
-    # Keep last 4
-    if len(history) > 4:
-        history = history[-4:]
-        
-    # Save
+    # Save full history (Long-term database)
     with open(ABI_HISTORY_FILE, 'w') as f:
         json.dump(history, f)
         
@@ -138,7 +140,8 @@ def generate_abi_chart_html(history):
 
     for entry in history:
         val = entry['value']
-        label = entry['date']
+        # Use 'month' for the chart label,fallback to 'date' for backward compatibility if needed (though we migrated)
+        label = entry.get('month', entry.get('date', ''))
         
         # Calculate height and position
         is_positive = val >= baseline_y
@@ -199,7 +202,9 @@ def update_html(sections, report_date_str=None):
     if report_date_str:
         abi_history = update_abi_history(report_date_str, sections['abi'])
     
-    chart_html = generate_abi_chart_html(abi_history)
+    # Visualize only the last 4 months from the full history
+    chart_history_window = abi_history[-4:] if len(abi_history) > 4 else abi_history
+    chart_html = generate_abi_chart_html(chart_history_window)
     
     # Clean ABI text - Remove the specific data line that is now in the chart
     # Matches any line containing "ABI Northeast" and a number
