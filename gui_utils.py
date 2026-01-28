@@ -7,6 +7,7 @@
 
 import sys
 import os
+import os
 import ctypes
 
 # GUI Imports - Wrapped in Try/Except for headless environments
@@ -213,7 +214,7 @@ def get_user_approval(default_message):
     btn_frame.grid_columnconfigure(2, weight=1)
     btn_frame.grid_rowconfigure(0, weight=1)
     
-    def on_confirm():
+    def on_confirm(event=None):
         result['approved'] = True
         result['message'] = entry.get()
         root.destroy()
@@ -225,9 +226,16 @@ def get_user_approval(default_message):
     confirm_btn = ctk.CTkButton(
         btn_frame, text="Deploy", command=on_confirm,
         font=("Segoe UI", 13, "bold"), fg_color=colors['accent'], text_color="white",
-        hover_color=colors['accent_hover'], height=ELEMENT_HEIGHT, corner_radius=CORNER_RADIUS
+        hover_color=colors['accent_hover'], height=ELEMENT_HEIGHT, corner_radius=CORNER_RADIUS,
+        state="disabled"  # Initially disabled for safety
     )
     confirm_btn.grid(row=0, column=0, sticky="nsew")
+    
+    # Safety delay to prevent accidental clicks/auto-approval
+    def enable_confirm():
+        confirm_btn.configure(state="normal")
+        
+    root.after(500, enable_confirm)
     
     cancel_btn = ctk.CTkButton(
         btn_frame, text="Cancel", command=on_cancel,
@@ -236,6 +244,7 @@ def get_user_approval(default_message):
     )
     cancel_btn.grid(row=0, column=2, sticky="nsew")
     
+    # Key Bindings
     # Key Bindings
     root.bind('<Return>', lambda e: on_confirm())
     root.bind('<Escape>', lambda e: on_cancel())

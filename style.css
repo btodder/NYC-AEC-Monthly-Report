@@ -5,6 +5,11 @@
     --accent-color: #ff3300;
     /* Swiss Red */
     --line-weight: 2px;
+
+    /* Rhythm & Spacing */
+    --line-height-val: 1.4;
+    --spacing-unit: 1.4rem;
+    /* Matches line-height (1em * 1.4) */
 }
 
 * {
@@ -17,7 +22,7 @@ body {
     background-color: var(--bg-color);
     color: var(--text-color);
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    line-height: 1.4;
+    line-height: var(--line-height-val);
     -webkit-font-smoothing: antialiased;
     font-size: 16px;
     padding: 2rem;
@@ -29,7 +34,7 @@ body {
     margin: 0 auto;
     display: grid;
     grid-template-columns: repeat(12, 1fr);
-    grid-gap: 20px;
+    grid-gap: var(--spacing-unit);
 }
 
 /* Header */
@@ -68,7 +73,7 @@ section {
     margin-bottom: 2rem;
     display: grid;
     grid-template-columns: repeat(12, 1fr);
-    gap: 20px;
+    gap: var(--spacing-unit);
 }
 
 /* Tablet/Desktop adjustments */
