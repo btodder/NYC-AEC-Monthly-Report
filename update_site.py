@@ -255,16 +255,88 @@ def update_html(sections, report_date_str=None):
     
     print(f"Updated index.html with new content at {timestamp}")
 
+import tkinter as tk
+from tkinter import messagebox
+
+def get_user_approval(default_message):
+    """
+    Opens a Tkinter popup to get user approval and optional edit of the commit message.
+    Returns (True, message) if confirmed, (False, None) if cancelled.
+    """
+    result = {'approved': False, 'message': None}
+    
+    root = tk.Tk()
+    root.title("Confirm Deployment")
+    
+    # Center the window
+    window_width = 400
+    window_height = 150
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+    x = (screen_width - window_width) // 2
+    y = (screen_height - window_height) // 2
+    root.geometry(f"{window_width}x{window_height}+{x}+{y}")
+    
+    tk.Label(root, text="Proposed Commit Message:", font=("Arial", 10)).pack(pady=(10, 5))
+    
+    entry = tk.Entry(root, width=50)
+    entry.insert(0, default_message)
+    entry.pack(pady=5)
+    entry.focus_set()
+    
+    def on_confirm():
+        result['approved'] = True
+        result['message'] = entry.get()
+        root.destroy()
+        
+    def on_cancel():
+        result['approved'] = False
+        root.destroy()
+        
+    btn_frame = tk.Frame(root)
+    btn_frame.pack(pady=10)
+    
+    tk.Button(btn_frame, text="Deploy", command=on_confirm, bg="#dddddd", width=10).pack(side=tk.LEFT, padx=10)
+    tk.Button(btn_frame, text="Cancel", command=on_cancel, bg="#dddddd", width=10).pack(side=tk.LEFT, padx=10)
+    
+    # Bind Enter and Escape keys
+    root.bind('<Return>', lambda e: on_confirm())
+    root.bind('<Escape>', lambda e: on_cancel())
+    
+    root.protocol("WM_DELETE_WINDOW", on_cancel)
+    root.mainloop()
+    
+    return result['approved'], result['message']
+
 def git_deploy():
     try:
         print("Starting Git deployment...")
+        
+        # Human Approval Step
+        default_msg = "Weekly Update via Automation Script"
+        approved, final_msg = get_user_approval(default_msg)
+        
+        if not approved:
+            print("Deployment ABORTED by user.")
+            print("File preserved in incoming_reports for later processing.")
+            return False # Signal abort
+            
         subprocess.run(["git", "add", "."], cwd=BASE_DIR, check=True)
-        subprocess.run(["git", "commit", "-m", "Weekly Update via Automation Script"], cwd=BASE_DIR, check=True)
+        subprocess.run(["git", "commit", "-m", final_msg], cwd=BASE_DIR, check=True)
         subprocess.run(["git", "push"], cwd=BASE_DIR, check=True)
         print("Git push successful.")
+        return True # Signal success
+        
     except Exception as e:
         print(f"Git operation failed: {e}")
-        print("Continuing with archive step...")
+        # Even if git fails, we might want to continue or stop. 
+        # Typically if git fails we might NOT want to archive the file? 
+        # Let's assume we proceed to archive only if success or handled elsewhere.
+        # But per original logic, it continued. Let's return False to prevent archiving if that was the intent,
+        # but to match previous behavior (continue with archive), we can return True or handle differently.
+        # The user said "If Cancel, abort immediately and NOT push or archive".
+        return False
+
 
 def main():
     print("Checking for new reports...")
@@ -292,12 +364,13 @@ def main():
         update_html(sections, report_date_str)
         
         # Git operations
-        git_deploy()
-        
-        # Archive file
-        filename = os.path.basename(latest_file)
-        shutil.move(latest_file, os.path.join(ARCHIVE_DIR, filename))
-        print(f"Moved {filename} to archive/.")
+        if git_deploy():
+            # Archive file ONLY if deployment succeeded
+            filename = os.path.basename(latest_file)
+            shutil.move(latest_file, os.path.join(ARCHIVE_DIR, filename))
+            print(f"Moved {filename} to archive/.")
+        else:
+            print("Skipping archive step due to deployment abort/failure.")
         
     except Exception as e:
         print(f"Error processing file: {e}")
