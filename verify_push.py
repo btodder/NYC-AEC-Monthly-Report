@@ -3,12 +3,51 @@ import sys
 import subprocess
 import os
 
+def get_windows_theme():
+    """Detect Windows theme (light/dark) via registry."""
+    try:
+        import winreg
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, 
+                           r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize")
+        value, _ = winreg.QueryValueEx(key, "AppsUseLightTheme")
+        winreg.CloseKey(key)
+        return "light" if value == 1 else "dark"
+    except:
+        return "light"  # Fallback to light theme
+
+def get_theme_colors(theme):
+    """Return color scheme based on system theme."""
+    if theme == "dark":
+        return {
+            'bg': '#202020',
+            'surface': '#2d2d2d',
+            'text': '#ffffff',
+            'subtext': '#b4b4b4',
+            'accent': '#60cdff',
+            'accent_hover': '#4cb8eb',
+            'cancel': '#5a5a5a',
+            'cancel_hover': '#6e6e6e',
+            'border': '#3f3f3f'
+        }
+    else:
+        return {
+            'bg': '#f3f3f3',
+            'surface': '#ffffff',
+            'text': '#1f1f1f',
+            'subtext': '#5f5f5f',
+            'accent': '#0067c0',
+            'accent_hover': '#005a9e',
+            'cancel': '#8a8a8a',
+            'cancel_hover': '#737373',
+            'border': '#e5e5e5'
+        }
+
 def verify_manual_push():
     """
     Verification popup for manual git push commands with commit message editing.
     Returns 0 if approved, 1 if rejected.
     """
-    # Get the repository directory (verify_push.py is in the repo root)
+    # Get the repository directory
     repo_dir = os.path.dirname(os.path.abspath(__file__))
     
     # Read the last commit message
@@ -26,69 +65,68 @@ def verify_manual_push():
     
     result_dict = {'approved': False, 'message': original_message}
     
+    # Detect theme and get colors
+    theme = get_windows_theme()
+    colors = get_theme_colors(theme)
+    
     root = tk.Tk()
     root.title("Git Push")
-    
-    # Windows 11 color scheme
-    BG_COLOR = "#f3f3f3"
-    SURFACE_COLOR = "#ffffff"
-    TEXT_COLOR = "#1f1f1f"
-    ACCENT_COLOR = "#0067c0"
-    BUTTON_HOVER = "#005a9e"
-    CANCEL_COLOR = "#8a8a8a"
-    CANCEL_HOVER = "#737373"
-    
-    root.configure(bg=BG_COLOR)
+    root.configure(bg=colors['bg'])
     
     # Center the window
-    window_width = 500
-    window_height = 180
+    window_width = 520
+    window_height = 200
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
     x = (screen_width - window_width) // 2
     y = (screen_height - window_height) // 2
     root.geometry(f"{window_width}x{window_height}+{x}+{y}")
     
-    # Main container with padding
-    container = tk.Frame(root, bg=SURFACE_COLOR, relief=tk.FLAT)
-    container.pack(fill=tk.BOTH, expand=True, padx=1, pady=1)
+    # Main container
+    container = tk.Frame(root, bg=colors['surface'], relief=tk.FLAT, bd=0)
+    container.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
     
-    # Header
+    # Header with icon
+    header_frame = tk.Frame(container, bg=colors['surface'])
+    header_frame.pack(pady=(25, 5))
+    
     header = tk.Label(
-        container,
-        text="Manual Push Detected",
-        font=("Segoe UI", 12, "bold"),
-        bg=SURFACE_COLOR,
-        fg=TEXT_COLOR
+        header_frame,
+        text="📤  Manual Push Detected",
+        font=("Segoe UI", 13, "bold"),
+        bg=colors['surface'],
+        fg=colors['text']
     )
-    header.pack(pady=(20, 5))
+    header.pack()
     
     # Subheader
     subheader = tk.Label(
         container,
         text="Review and edit the commit message before pushing:",
         font=("Segoe UI", 9),
-        bg=SURFACE_COLOR,
-        fg="#5f5f5f"
+        bg=colors['surface'],
+        fg=colors['subtext']
     )
-    subheader.pack(pady=(0, 15))
+    subheader.pack(pady=(0, 20))
     
-    # Entry field with border
-    entry_frame = tk.Frame(container, bg="#e5e5e5", relief=tk.FLAT)
-    entry_frame.pack(padx=30, pady=(0, 20), fill=tk.X)
+    # Entry field with subtle border
+    entry_frame = tk.Frame(container, bg=colors['border'], relief=tk.FLAT, bd=0)
+    entry_frame.pack(padx=35, pady=(0, 25), fill=tk.X)
     
     entry = tk.Entry(
         entry_frame,
         font=("Segoe UI", 10),
-        bg=SURFACE_COLOR,
-        fg=TEXT_COLOR,
+        bg=colors['surface'],
+        fg=colors['text'],
         relief=tk.FLAT,
-        insertbackground=TEXT_COLOR,
-        bd=0
+        insertbackground=colors['accent'],
+        bd=0,
+        highlightthickness=0
     )
-    entry.pack(padx=1, pady=1, fill=tk.X, ipady=6)
+    entry.pack(padx=1, pady=1, fill=tk.X, ipady=8)
     entry.insert(0, original_message)
     entry.focus_set()
+    entry.select_range(0, tk.END)
     
     def on_approve():
         result_dict['approved'] = True
@@ -100,44 +138,40 @@ def verify_manual_push():
         root.destroy()
     
     # Button frame
-    btn_frame = tk.Frame(container, bg=SURFACE_COLOR)
-    btn_frame.pack(pady=(0, 20))
+    btn_frame = tk.Frame(container, bg=colors['surface'])
+    btn_frame.pack(pady=(0, 25))
+    
+    # Create buttons with hover effect
+    def create_button(parent, text, command, bg, hover_bg):
+        btn = tk.Button(
+            parent,
+            text=text,
+            command=command,
+            font=("Segoe UI", 9, "bold"),
+            bg=bg,
+            fg="white",
+            activebackground=hover_bg,
+            activeforeground="white",
+            relief=tk.FLAT,
+            cursor="hand2",
+            bd=0,
+            padx=35,
+            pady=10
+        )
+        
+        # Bind hover events
+        btn.bind("<Enter>", lambda e: btn.config(bg=hover_bg))
+        btn.bind("<Leave>", lambda e: btn.config(bg=bg))
+        
+        return btn
     
     # Push button
-    push_btn = tk.Button(
-        btn_frame,
-        text="Push",
-        command=on_approve,
-        font=("Segoe UI", 9),
-        bg=ACCENT_COLOR,
-        fg="white",
-        activebackground=BUTTON_HOVER,
-        activeforeground="white",
-        relief=tk.FLAT,
-        cursor="hand2",
-        bd=0,
-        padx=30,
-        pady=8
-    )
-    push_btn.pack(side=tk.LEFT, padx=5)
+    push_btn = create_button(btn_frame, "Push", on_approve, colors['accent'], colors['accent_hover'])
+    push_btn.pack(side=tk.LEFT, padx=6)
     
     # Cancel button
-    cancel_btn = tk.Button(
-        btn_frame,
-        text="Cancel",
-        command=on_reject,
-        font=("Segoe UI", 9),
-        bg=CANCEL_COLOR,
-        fg="white",
-        activebackground=CANCEL_HOVER,
-        activeforeground="white",
-        relief=tk.FLAT,
-        cursor="hand2",
-        bd=0,
-        padx=30,
-        pady=8
-    )
-    cancel_btn.pack(side=tk.LEFT, padx=5)
+    cancel_btn = create_button(btn_frame, "Cancel", on_reject, colors['cancel'], colors['cancel_hover'])
+    cancel_btn.pack(side=tk.LEFT, padx=6)
     
     # Bind keys
     root.bind('<Return>', lambda e: on_approve())
