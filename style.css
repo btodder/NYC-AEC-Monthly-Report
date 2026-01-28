@@ -138,4 +138,16 @@ footer {
     border-top: 1px solid #ccc;
     font-size: 0.8rem;
     color: #666;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+footer #last-updated {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.8rem;
+    border: none;
+    padding: 0;
+    text-transform: uppercase;
+    color: var(--text-color);
 }
