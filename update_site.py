@@ -134,7 +134,7 @@ def main():
         if date_match:
             try:
                 dt = datetime.strptime(date_match.group(1), '%Y-%m-%d')
-                report_date_str = dt.strftime('%B %Y').upper()
+                report_date_str = f"{dt.strftime('%b').upper()}<br>{dt.strftime('%Y')}"
             except ValueError:
                 pass
 
