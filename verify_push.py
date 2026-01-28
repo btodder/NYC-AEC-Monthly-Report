@@ -82,6 +82,23 @@ def verify_manual_push():
     y = (screen_height - window_height) // 2
     root.geometry(f"{window_width}x{window_height}+{x}+{y}")
     
+    # Apply dark title bar on Windows 10/11
+    if theme == "dark":
+        try:
+            import ctypes
+            # Get window handle
+            hwnd = ctypes.windll.user32.GetParent(root.winfo_id())
+            # DWMWA_USE_IMMERSIVE_DARK_MODE = 20
+            value = ctypes.c_int(1)
+            ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                hwnd,
+                20,
+                ctypes.byref(value),
+                ctypes.sizeof(value)
+            )
+        except:
+            pass  # Silently fail on older Windows or if DWM unavailable
+    
     # Main container
     container = tk.Frame(root, bg=colors['surface'], relief=tk.FLAT, bd=0)
     container.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
@@ -141,13 +158,13 @@ def verify_manual_push():
     btn_frame = tk.Frame(container, bg=colors['surface'])
     btn_frame.pack(pady=(0, 25))
     
-    # Create buttons with hover effect
+    # Create buttons with hover effect and MUCH larger padding
     def create_button(parent, text, command, bg, hover_bg):
         btn = tk.Button(
             parent,
             text=text,
             command=command,
-            font=("Segoe UI", 9, "bold"),
+            font=("Segoe UI", 10, "bold"),
             bg=bg,
             fg="white",
             activebackground=hover_bg,
@@ -155,8 +172,8 @@ def verify_manual_push():
             relief=tk.FLAT,
             cursor="hand2",
             bd=0,
-            padx=35,
-            pady=10
+            padx=50,
+            pady=12
         )
         
         # Bind hover events
