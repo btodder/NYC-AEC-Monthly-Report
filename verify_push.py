@@ -229,8 +229,8 @@ def verify_manual_push():
         result_dict['approved'] = False
         root.destroy()
     
-    # Button frame
-    btn_frame = tk.Frame(container, bg=colors['surface'], height=ELEMENT_HEIGHT)
+    # Button frame - use darker background like container
+    btn_frame = tk.Frame(container, bg=colors['surface_dark'], height=ELEMENT_HEIGHT)
     btn_frame.grid(row=2, column=0, sticky="ew", padx=PADDING)
     btn_frame.grid_propagate(False)
     btn_frame.grid_columnconfigure(0, weight=1)
