@@ -36,8 +36,8 @@ body {
 header {
     grid-column: 1 / -1;
     border-bottom: var(--line-weight) solid var(--text-color);
-    padding-bottom: 2rem;
-    margin-bottom: 4rem;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
