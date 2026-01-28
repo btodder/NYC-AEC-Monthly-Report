@@ -323,7 +323,11 @@ def git_deploy():
             
         subprocess.run(["git", "add", "."], cwd=BASE_DIR, check=True)
         subprocess.run(["git", "commit", "-m", final_msg], cwd=BASE_DIR, check=True)
-        subprocess.run(["git", "push"], cwd=BASE_DIR, check=True)
+        
+        # Set bypass flag to avoid double popup from pre-push hook
+        env = os.environ.copy()
+        env['BYPASS_HOOK'] = '1'
+        subprocess.run(["git", "push"], cwd=BASE_DIR, check=True, env=env)
         print("Git push successful.")
         return True # Signal success
         
