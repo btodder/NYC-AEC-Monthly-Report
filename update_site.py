@@ -23,21 +23,20 @@ def parse_report(file_path):
 
     sections = {}
     
-    # Simple parsing logic
-    # Expected format:
-    # [FILINGS]
-    # content...
-    # [RATES]
-    # content...
-    # [TAKEAWAYS]
-    # content...
+    # Headers regex patterns
+    # Support both [HEADER] and **Header** formats
+    h_filings = r'(?:\[FILINGS\]|\*\*Filings & Permits\*\*)'
+    h_abi = r'(?:\[ABI\]|\*\*ABI \(Northeast\)\*\*)'
+    h_rates = r'(?:\[RATES\]|\*\*Rates & Incentives\*\*)'
+    h_takeaways = r'(?:\[TAKEAWAYS\]|\*\*Key Takeaways\*\*)'
+    
+    # Lookahead for any header or end of string
+    any_header = f'(?:{h_filings}|{h_abi}|{h_rates}|{h_takeaways}|$)'
 
-    # Updated regex to handle [ABI] section
-    # Order: FILINGS -> ABI -> RATES -> TAKEAWAYS
-    filings_match = re.search(r'\[FILINGS\]\s*(.*?)\s*(?=\[ABI\]|\[RATES\]|\[TAKEAWAYS\]|$)', content, re.DOTALL | re.IGNORECASE)
-    abi_match = re.search(r'\[ABI\]\s*(.*?)\s*(?=\[FILINGS\]|\[RATES\]|\[TAKEAWAYS\]|$)', content, re.DOTALL | re.IGNORECASE)
-    rates_match = re.search(r'\[RATES\]\s*(.*?)\s*(?=\[FILINGS\]|\[ABI\]|\[TAKEAWAYS\]|$)', content, re.DOTALL | re.IGNORECASE)
-    takeaways_match = re.search(r'\[TAKEAWAYS\]\s*(.*?)\s*(?=\[FILINGS\]|\[ABI\]|\[RATES\]|$)', content, re.DOTALL | re.IGNORECASE)
+    filings_match = re.search(rf'{h_filings}\s*(.*?)\s*(?={any_header})', content, re.DOTALL | re.IGNORECASE)
+    abi_match = re.search(rf'{h_abi}\s*(.*?)\s*(?={any_header})', content, re.DOTALL | re.IGNORECASE)
+    rates_match = re.search(rf'{h_rates}\s*(.*?)\s*(?={any_header})', content, re.DOTALL | re.IGNORECASE)
+    takeaways_match = re.search(rf'{h_takeaways}\s*(.*?)\s*(?={any_header})', content, re.DOTALL | re.IGNORECASE)
 
     sections['filings'] = filings_match.group(1).strip() if filings_match else "No data provided."
     sections['abi'] = abi_match.group(1).strip() if abi_match else "No data provided."
