@@ -4,12 +4,15 @@ import re
 import shutil
 import subprocess
 from datetime import datetime
+import json
+import gui_utils
 
 # Configuration
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 INCOMING_DIR = os.path.join(BASE_DIR, 'incoming_reports')
 ARCHIVE_DIR = os.path.join(BASE_DIR, 'archive')
 INDEX_FILE = os.path.join(BASE_DIR, 'index.html')
+ABI_HISTORY_FILE = os.path.join(BASE_DIR, 'abi_history.json')
 
 def get_latest_report():
     files = glob.glob(os.path.join(INCOMING_DIR, '*.txt'))
@@ -20,100 +23,115 @@ def get_latest_report():
 def parse_report(file_path):
     with open(file_path, 'r', encoding='utf-8') as f:
         content = f.read()
-
+    
     sections = {}
     
-    # Headers regex patterns
-    # Support both [HEADER] and **Header** formats
-    h_filings = r'(?:\[FILINGS\]|\*\*Filings & Permits\*\*)'
-    h_abi = r'(?:\[ABI\]|\*\*ABI \(Northeast\)\*\*)'
-    h_rates = r'(?:\[RATES\]|\*\*Rates & Incentives\*\*)'
-    h_takeaways = r'(?:\[TAKEAWAYS\]|\*\*Key Takeaways\*\*)'
+    # Extract Title (First line)
+    title_match = re.search(r'^(.*)', content)
+    sections['title'] = title_match.group(1) if title_match else "NYC AEC Monthly Report"
     
-    # Lookahead for any header or end of string
-    any_header = f'(?:{h_filings}|{h_abi}|{h_rates}|{h_takeaways}|$)'
-
-    filings_match = re.search(rf'{h_filings}\s*(.*?)\s*(?={any_header})', content, re.DOTALL | re.IGNORECASE)
-    abi_match = re.search(rf'{h_abi}\s*(.*?)\s*(?={any_header})', content, re.DOTALL | re.IGNORECASE)
-    rates_match = re.search(rf'{h_rates}\s*(.*?)\s*(?={any_header})', content, re.DOTALL | re.IGNORECASE)
-    takeaways_match = re.search(rf'{h_takeaways}\s*(.*?)\s*(?={any_header})', content, re.DOTALL | re.IGNORECASE)
-
-    sections['filings'] = filings_match.group(1).strip() if filings_match else "No data provided."
-    sections['abi'] = abi_match.group(1).strip() if abi_match else "No data provided."
-    sections['rates'] = rates_match.group(1).strip() if rates_match else "No data provided."
-    sections['takeaways'] = takeaways_match.group(1).strip() if takeaways_match else "No data provided."
+    # Helper to extract sections between headers
+    def extract_section(header_num, header_name):
+        pattern = rf'(?m)^{header_num}: \*\*?{header_name}\*\*?(.*?)(?=^\d+:|\Z)'
+        match = re.search(pattern, content, re.DOTALL)
+        return match.group(1).strip() if match else ""
+    
+    sections['filings'] = extract_section('1', 'New Building Filings')
+    sections['abi'] = extract_section('9', 'ABI \(Northeast\)') # Number might change, using 9 per sample
+    sections['rates'] = extract_section('10', 'Rates')
+    sections['takeaways'] = extract_section('11', 'Key Takeaways')
+    
+    # Fallback if numbering is different (The sample used 1, 9, 10, 11)
+    # If the user changes numbering, this regex might need adjustment.
+    # For now, it matches the provided "9: **ABI (Northeast)**" format.
     
     return sections
 
 def format_content_to_html(text):
-    """Converts raw text into HTML, turning bullet points into lists."""
+    # Convert bullet points
     lines = text.split('\n')
-    html_output = []
+    html_lines = []
+    
+    # Simple list detection
     in_list = False
-
+    
     for line in lines:
-        stripped = line.strip()
-        if not stripped:
+        line = line.strip()
+        if not line:
             continue
-        
-        # Check if line is a bullet point
-        if stripped.startswith('•') or stripped.startswith('-') or stripped.startswith('*'):
+            
+        if line.startswith('•') or line.startswith('-'):
             if not in_list:
-                html_output.append('<ul>')
+                html_lines.append('<ul>')
                 in_list = True
-            # Remove bullet char and wrap in li
-            content = re.sub(r'^[•\-\*]\s*', '', stripped)
-            html_output.append(f'<li>{content}</li>')
+            clean_line = line.lstrip('•- ').strip()
+            # Bolt specific key phrases
+            clean_line = re.sub(r'(ABI Northeast — \d+\.\d+)', r'<strong>\1</strong>', clean_line)
+            html_lines.append(f'<li>{clean_line}</li>')
         else:
             if in_list:
-                html_output.append('</ul>')
+                html_lines.append('</ul>')
                 in_list = False
-            html_output.append(f'<p>{stripped}</p>')
-    
+            html_lines.append(f'<p>{line}</p>')
+            
     if in_list:
-        html_output.append('</ul>')
+        html_lines.append('</ul>')
         
-    return "".join(html_output)
-
-# ABI Chart Logic
-import json
-
-ABI_HISTORY_FILE = os.path.join(BASE_DIR, 'abi_history.json')
+    return '\n'.join(html_lines)
 
 def update_abi_history(report_date_str, abi_section_text):
-    # Extract ABI value from text like "ABI Northeast - 45.1"
-    match = re.search(r'ABI Northeast\s*[—\-]\s*(\d+\.?\d*)', abi_section_text, re.IGNORECASE)
-    if not match:
-        print("Could not extract ABI value.")
-        return load_abi_history()
-
-    new_value = float(match.group(1))
+    """
+    Parses ABI value from text, updates abi_history.json, and returns list of history.
+    """
+    # 1. Parse Value: "ABI Northeast — 45.1"
+    value_match = re.search(r'ABI Northeast — (\d+\.\d+)', abi_section_text)
+    if not value_match:
+        print("Warning: Could not parse ABI value from text.")
+        return []
+        
+    new_value = float(value_match.group(1))
     
-    # Load existing history
-    history = load_abi_history()
+    # 2. Parse Date: "JAN<br>2026" or similar from report_date_str
+    # report_date_str is like "JAN<br>2026"
+    if not report_date_str:
+        now = datetime.now()
+        month_str = now.strftime('%b').upper()
+        year_str = str(now.year)
+    else:
+        parts = report_date_str.split('<br>')
+        month_str = parts[0]
+        year_str = parts[1]
+        
+    new_entry = {
+        "month": month_str,
+        "year": year_str,
+        "value": new_value
+    }
     
-    # Append new entry
-    # Append new entry
-    # Extract short month and year: "JAN<br>2026" -> "JAN", "2026"
-    parts = report_date_str.split('<br>')
-    month_label = parts[0]
-    year_label = parts[1] if len(parts) > 1 else str(datetime.now().year)
-    
-    # Check if duplicate date (matches both month and year)
-    if history:
-        last = history[-1]
-        if last.get('month') == month_label and last.get('year') == year_label:
-            return history # Don't duplicate
-
-    history.append({
-        'month': month_label,
-        'year': year_label,
-        'value': new_value
-    })
-    
-    # Save full history (Long-term database)
+    # 3. Load History
+    history = []
+    if os.path.exists(ABI_HISTORY_FILE):
+        try:
+            with open(ABI_HISTORY_FILE, 'r') as f:
+                history = json.load(f)
+        except:
+            history = []
+            
+    # 4. Append if not duplicate (by month/year)
+    # Check if this month/year already exists
+    exists = False
+    for entry in history:
+        if entry['month'] == month_str and entry['year'] == year_str:
+            entry['value'] = new_value # Update value if re-running
+            exists = True
+            break
+            
+    if not exists:
+        history.append(new_entry)
+        
+    # 5. Save History
     with open(ABI_HISTORY_FILE, 'w') as f:
-        json.dump(history, f)
+        json.dump(history, f, indent=4)
         
     return history
 
@@ -278,234 +296,13 @@ def update_html(sections, report_date_str=None):
     
     print(f"Updated index.html with new content at {timestamp}")
 
-# GUI Imports and Logic - Wrapped in Try/Except for headless environments (Streamlit Cloud)
-# GUI Imports and Logic - Wrapped in Try/Except for headless environments
-HAS_GUI = False
-try:
-    import tkinter as tk
-    import customtkinter as ctk
-    from tkinter import messagebox
-    HAS_GUI = True
-except (ImportError, RuntimeError):
-    pass
-
-def get_windows_theme():
-    """Detect Windows theme (light/dark) via registry."""
-    try:
-        import winreg
-        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, 
-                           r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize")
-        value, _ = winreg.QueryValueEx(key, "AppsUseLightTheme")
-        winreg.CloseKey(key)
-        return "light" if value == 1 else "dark"
-    except:
-        return "light"
-
-def get_theme_colors(theme):
-    """Return color scheme based on system theme."""
-    if theme == "dark":
-        return {
-            'bg': '#202020',
-            'surface': '#2d2d2d',       # Title bar
-            'surface_dark': '#252525',  # Content area
-            'text': '#ffffff',
-            'subtext': '#b4b4b4',
-            'accent': '#60cdff',
-            'accent_hover': '#4cb8eb',
-            'cancel': '#5a5a5a',
-            'cancel_hover': '#c42b1c',  # Red hover for cancel
-            'border': '#3f3f3f'
-        }
-    else:
-        return {
-            'bg': '#f3f3f3',
-            'surface': '#ffffff',       # Title bar
-            'surface_dark': '#f5f5f5',  # Content area
-            'text': '#1f1f1f',
-            'subtext': '#5f5f5f',
-            'accent': '#0067c0',
-            'accent_hover': '#005a9e',
-            'cancel': '#8a8a8a',
-            'cancel_hover': '#c42b1c',  # Red hover for cancel
-            'border': '#e5e5e5'
-        }
-
-def get_user_approval(default_message):
-    """
-    Opens a Modern CustomTkinter popup to get user approval.
-    """
-    if not HAS_GUI:
-        print("Headless environment detected. Auto-approving deployment.")
-        return True, default_message
-
-    result = {'approved': False, 'message': None}
-    
-    # Detect theme
-    theme = get_windows_theme()
-    colors = get_theme_colors(theme)
-    ctk.set_appearance_mode("Dark" if theme == "dark" else "Light")
-    ctk.set_default_color_theme("blue")
-    ctk.set_widget_scaling(1.0)
-    
-    root = ctk.CTk()
-    root.title("Deploy Report")
-    root.overrideredirect(True)
-    root.configure(fg_color=colors['border'])
-    
-    # Spacing and sizing (scaled 2/3)
-    PADDING = 20
-    ELEMENT_HEIGHT = 57
-    TITLE_HEIGHT = 48
-    BORDER_WIDTH = 1
-    CORNER_RADIUS = 3
-    
-    # Needs to be slightly taller for the header info
-    window_width = 467
-    window_height = 340 # Increased height for header/subheader
-    
-    # Center
-    screen_width = root.winfo_screenwidth()
-    screen_height = root.winfo_screenheight()
-    x = (screen_width - window_width) // 2
-    y = (screen_height - window_height) // 2
-    root.geometry(f"{window_width}x{window_height}+{x}+{y}")
-    
-    # Apply dark title bar on Windows 10/11
-    if theme == "dark":
-        try:
-            import ctypes
-            hwnd = ctypes.windll.user32.GetParent(root.winfo_id())
-            value = ctypes.c_int(1)
-            ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, 20, ctypes.byref(value), ctypes.sizeof(value))
-        except:
-            pass
-            
-    # Main wrapper with border (simulates 1px border via padding)
-    main_frame = ctk.CTkFrame(root, fg_color=colors['surface'], corner_radius=0)
-    main_frame.pack(fill=tk.BOTH, expand=True, padx=BORDER_WIDTH, pady=BORDER_WIDTH)
-
-    # Title bar
-    title_bar = ctk.CTkFrame(main_frame, fg_color=colors['surface'], height=TITLE_HEIGHT - BORDER_WIDTH, corner_radius=0)
-    title_bar.pack(fill=tk.X, side=tk.TOP)
-    title_bar.pack_propagate(False)
-
-    title_label = ctk.CTkLabel(title_bar, text="🚀  Confirm Deployment", font=("Segoe UI", 13, "bold"), text_color=colors['text'])
-    title_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
-    
-    # Minimize button
-    def minimize_window():
-        root.overrideredirect(False)
-        root.iconify()
-        def restore_window(event=None):
-            if root.state() == 'iconic': return
-            root.overrideredirect(True)
-            root.unbind('<Map>')
-        root.bind('<Map>', restore_window)
-    
-    min_btn = ctk.CTkButton(
-        title_bar, text="─", command=minimize_window,
-        font=("Segoe UI", 14), fg_color=colors['surface'], text_color=colors['text'],
-        hover_color=colors['border'], width=50, height=TITLE_HEIGHT - BORDER_WIDTH, corner_radius=0
-    )
-    min_btn.pack(side=tk.RIGHT)
-    
-    # Make title bar draggable
-    def start_drag(event): root._drag_x = event.x; root._drag_y = event.y
-    def do_drag(event):
-        x = root.winfo_x() + event.x - root._drag_x
-        y = root.winfo_y() + event.y - root._drag_y
-        root.geometry(f"+{x}+{y}")
-    
-    title_bar.bind("<Button-1>", start_drag)
-    title_bar.bind("<B1-Motion>", do_drag)
-    title_label.bind("<Button-1>", start_drag)
-    title_label.bind("<B1-Motion>", do_drag)
-    
-    # Main container
-    container = ctk.CTkFrame(main_frame, fg_color=colors['surface_dark'], corner_radius=0)
-    container.pack(fill=tk.BOTH, expand=True)
-
-    # Configure grid for vertical centering
-    container.grid_rowconfigure(0, weight=1)
-    container.grid_rowconfigure(1, weight=0)
-    container.grid_rowconfigure(2, weight=0)
-    container.grid_rowconfigure(3, weight=1)
-    container.grid_columnconfigure(0, weight=1)
-    
-    # Subheader (Placed in grid row 0, bottom aligned?)
-    # Verify_push doesn't have a subheader, but update_site DOES.
-    # Let's put subheader in Row 0.
-    subheader = ctk.CTkLabel(
-        container,
-        text="Review and edit the commit message before deploying:",
-        font=("Segoe UI", 12),
-        text_color=colors['subtext']
-    )
-    subheader.grid(row=0, column=0, pady=(20, 10), sticky="s")
-    
-    # Entry
-    entry = ctk.CTkEntry(
-        container,
-        font=("Segoe UI", 13),
-        fg_color=colors['surface'],
-        text_color=colors['text'],
-        border_color=colors['border'],
-        border_width=1,
-        height=ELEMENT_HEIGHT,
-        corner_radius=CORNER_RADIUS,
-        justify="center"
-    )
-    entry.grid(row=1, column=0, padx=PADDING, pady=(0, PADDING), sticky="ew")
-    entry.insert(0, default_message)
-    entry.focus_set()
-    entry.select_range(0, tk.END)
-    
-    # Buttons
-    btn_frame = ctk.CTkFrame(container, fg_color=colors['surface_dark'], height=ELEMENT_HEIGHT, corner_radius=0)
-    btn_frame.grid(row=2, column=0, padx=PADDING, sticky="ew")
-    btn_frame.grid_propagate(False)
-    btn_frame.grid_columnconfigure(0, weight=1)
-    btn_frame.grid_columnconfigure(1, weight=0, minsize=PADDING) # Spacing between buttons
-    btn_frame.grid_columnconfigure(2, weight=1)
-    btn_frame.grid_rowconfigure(0, weight=1)
-    
-    def on_confirm():
-        result['approved'] = True
-        result['message'] = entry.get()
-        root.destroy()
-        
-    def on_cancel():
-        result['approved'] = False
-        root.destroy()
-
-    confirm_btn = ctk.CTkButton(
-        btn_frame, text="Deploy", command=on_confirm,
-        font=("Segoe UI", 13, "bold"), fg_color=colors['accent'], text_color="white",
-        hover_color=colors['accent_hover'], height=ELEMENT_HEIGHT, corner_radius=CORNER_RADIUS
-    )
-    confirm_btn.grid(row=0, column=0, sticky="nsew")
-    
-    cancel_btn = ctk.CTkButton(
-        btn_frame, text="Cancel", command=on_cancel,
-        font=("Segoe UI", 13, "bold"), fg_color=colors['cancel'], text_color="white",
-        hover_color=colors['cancel_hover'], height=ELEMENT_HEIGHT, corner_radius=CORNER_RADIUS
-    )
-    cancel_btn.grid(row=0, column=2, sticky="nsew")
-    
-    root.bind('<Return>', lambda e: on_confirm())
-    root.bind('<Escape>', lambda e: on_cancel())
-    root.protocol("WM_DELETE_WINDOW", on_cancel)
-    root.mainloop()
-    
-    return result['approved'], result['message']
-
 def git_deploy():
     try:
         print("Starting Git deployment...")
         
         # Human Approval Step
         default_msg = "Weekly Update via Automation Script"
-        approved, final_msg = get_user_approval(default_msg)
+        approved, final_msg = gui_utils.get_user_approval(default_msg)
         
         if not approved:
             print("Deployment ABORTED by user.")
