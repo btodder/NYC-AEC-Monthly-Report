@@ -84,6 +84,7 @@ def verify_manual_push():
     # Set customtkinter appearance
     ctk.set_appearance_mode("dark" if theme == "dark" else "light")
     ctk.set_default_color_theme("blue")
+    ctk.set_widget_scaling(1.0)
     
     # Create window
     root = ctk.CTk()
