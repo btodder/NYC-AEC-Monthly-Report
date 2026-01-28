@@ -91,10 +91,10 @@ def verify_manual_push():
     colors = get_theme_colors(theme)
     
     root = tk.Tk()
-    root.title("Git Push Detected, Review Commit Message:")  # Title bar text
-    root.configure(bg=colors['bg'])
+    root.title("Git Push Detected, Review Commit Message:")
+    root.configure(bg=colors['surface'])
     
-    # Fixed window size - not resizable
+    # Fixed window size
     window_width = 750
     window_height = 375
     root.resizable(False, False)
@@ -110,29 +110,31 @@ def verify_manual_push():
     if theme == "dark":
         apply_dark_title_bar(root)
     
-    # Main container
-    container = tk.Frame(root, bg=colors['surface'], relief=tk.FLAT, bd=0)
-    container.pack(fill=tk.BOTH, expand=True, padx=1, pady=1)
-    
-    # Uniform spacing value
-    SPACING = 30
+    # Spacing and sizing
+    PADDING = 30
     ELEMENT_HEIGHT = 50
     
-    # Content frame for vertical centering
-    content_frame = tk.Frame(container, bg=colors['surface'])
-    content_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+    # Main container fills window
+    container = tk.Frame(root, bg=colors['surface'])
+    container.pack(fill=tk.BOTH, expand=True)
     
-    # Entry field with border
-    entry_frame = tk.Frame(content_frame, bg=colors['border'], relief=tk.FLAT, bd=0)
-    entry_frame.pack(padx=0, pady=(0, SPACING), fill=tk.X)
-    entry_frame.pack_propagate(False)
+    # Configure grid for vertical centering
+    container.grid_rowconfigure(0, weight=1)  # Top spacer
+    container.grid_rowconfigure(1, weight=0)  # Entry
+    container.grid_rowconfigure(2, weight=0)  # Buttons
+    container.grid_rowconfigure(3, weight=1)  # Bottom spacer
+    container.grid_columnconfigure(0, weight=1)
     
-    # Set entry frame dimensions - height matches buttons
-    entry_frame.configure(width=window_width - (SPACING * 2) - 2, height=ELEMENT_HEIGHT)
+    # Entry frame with border
+    entry_outer = tk.Frame(container, bg=colors['border'], height=ELEMENT_HEIGHT)
+    entry_outer.grid(row=1, column=0, sticky="ew", padx=PADDING, pady=(0, PADDING))
+    entry_outer.grid_propagate(False)
+    entry_outer.grid_columnconfigure(0, weight=1)
+    entry_outer.grid_rowconfigure(0, weight=1)
     
     entry = tk.Entry(
-        entry_frame,
-        font=("Segoe UI", 10),
+        entry_outer,
+        font=("Segoe UI", 11),
         bg=colors['surface'],
         fg=colors['text'],
         relief=tk.FLAT,
@@ -140,7 +142,7 @@ def verify_manual_push():
         bd=0,
         highlightthickness=0
     )
-    entry.pack(padx=1, pady=1, fill=tk.BOTH, expand=True)
+    entry.grid(row=0, column=0, sticky="nsew", padx=1, pady=1)
     entry.insert(0, original_message)
     entry.focus_set()
     entry.select_range(0, tk.END)
@@ -154,50 +156,48 @@ def verify_manual_push():
         result_dict['approved'] = False
         root.destroy()
     
-    # Button frame - same width as entry
-    btn_frame = tk.Frame(content_frame, bg=colors['surface'], width=window_width - (SPACING * 2) - 2)
-    btn_frame.pack(padx=0, fill=tk.X)
+    # Button frame
+    btn_frame = tk.Frame(container, bg=colors['surface'], height=ELEMENT_HEIGHT)
+    btn_frame.grid(row=2, column=0, sticky="ew", padx=PADDING)
+    btn_frame.grid_propagate(False)
+    btn_frame.grid_columnconfigure(0, weight=1)
+    btn_frame.grid_columnconfigure(1, weight=0, minsize=PADDING)  # Gap
+    btn_frame.grid_columnconfigure(2, weight=1)
+    btn_frame.grid_rowconfigure(0, weight=1)
     
-    # Calculate button width: (total width - gap) / 2
-    button_width = (window_width - (SPACING * 2) - 2 - SPACING) // 2
-    
-    # Confirm button - no bold, fixed height
+    # Confirm button
     confirm_btn = tk.Button(
         btn_frame,
         text="Confirm",
         command=on_confirm,
-        font=("Segoe UI", 10),
+        font=("Segoe UI", 11),
         bg=colors['accent'],
         fg="white",
         activebackground=colors['accent_hover'],
         activeforeground="white",
         relief=tk.FLAT,
         cursor="hand2",
-        bd=0,
-        width=button_width // 8,
-        height=2
+        bd=0
     )
-    confirm_btn.pack(side=tk.LEFT, padx=(0, SPACING // 2))
+    confirm_btn.grid(row=0, column=0, sticky="nsew")
     confirm_btn.bind("<Enter>", lambda e: confirm_btn.config(bg=colors['accent_hover']))
     confirm_btn.bind("<Leave>", lambda e: confirm_btn.config(bg=colors['accent']))
     
-    # Cancel button - no bold, fixed height
+    # Cancel button
     cancel_btn = tk.Button(
         btn_frame,
         text="Cancel",
         command=on_cancel,
-        font=("Segoe UI", 10),
+        font=("Segoe UI", 11),
         bg=colors['cancel'],
         fg="white",
         activebackground=colors['cancel_hover'],
         activeforeground="white",
         relief=tk.FLAT,
         cursor="hand2",
-        bd=0,
-        width=button_width // 8,
-        height=2
+        bd=0
     )
-    cancel_btn.pack(side=tk.LEFT, padx=(SPACING // 2, 0))
+    cancel_btn.grid(row=0, column=2, sticky="nsew")
     cancel_btn.bind("<Enter>", lambda e: cancel_btn.config(bg=colors['cancel_hover']))
     cancel_btn.bind("<Leave>", lambda e: cancel_btn.config(bg=colors['cancel']))
     
