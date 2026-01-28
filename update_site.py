@@ -92,14 +92,14 @@ def update_abi_history(report_date_str, abi_section_text):
     # Load existing history
     history = load_abi_history()
     
-    # Check if duplicate date
-    if history and history[-1]['date'] == report_date_str:
-        return history # Don't duplicate
-
     # Append new entry
     # Extract short month for label: "JAN<br>2026" -> "JAN"
     month_label = report_date_str.split('<br>')[0] 
     
+    # Check if duplicate date
+    if history and history[-1]['date'] == month_label:
+        return history # Don't duplicate
+
     history.append({
         'date': month_label,
         'value': new_value
@@ -201,8 +201,21 @@ def update_html(sections, report_date_str=None):
     
     chart_html = generate_abi_chart_html(abi_history)
     
+    # Clean ABI text - Remove the specific data line that is now in the chart
+    # Matches any line containing "ABI Northeast" and a number
+    cleaned_abi_text = re.sub(r'(?m)^.*?ABI Northeast.*?\d+.*(?:\r?\n)?', '', sections['abi'], flags=re.IGNORECASE)
+    
     # Prepend chart to ABI content if it exists
-    full_abi_content = chart_html + format_content_to_html(sections['abi'])
+    full_abi_content = chart_html + format_content_to_html(cleaned_abi_text)
+    
+    # Construct Full ABI Section HTML
+    abi_section_html = f'''
+        <!-- Section 2: ABI (Northeast) -->
+        <section class="abi">
+            <h2>02. ABI (Northeast)</h2>
+            <div id="abi-content" class="content-block">{full_abi_content}</div>
+        </section>
+        '''
 
     # Function to replace content inside a div with specific ID
     def replace_section(html_content, section_id, new_html):
@@ -211,8 +224,15 @@ def update_html(sections, report_date_str=None):
         return re.sub(pattern, replacement, html_content, flags=re.DOTALL)
 
     html = replace_section(html, 'filings-content', format_content_to_html(sections['filings']))
-    # Directly inject full_abi_content since it already contains HTML
-    html = re.sub(r'(<div id="abi-content"[^>]*>)(.*?)(</div>)', f'\\1{full_abi_content}\\3', html, flags=re.DOTALL)
+    
+    # Robust Replacement for ABI Section
+    # Matches everything from <!-- Section 2: ... --> to just before <!-- Section 3: ... -->
+    # This ensures we replace the ENTIRE block structure, avoiding nested div issues
+    abi_pattern = r'(<!-- Section 2: ABI \(Northeast\) -->.*?)(?=<!-- Section 3:)'
+    html = re.sub(abi_pattern, abi_section_html.strip() + '\n\n        ', html, flags=re.DOTALL)
+    
+    html = replace_section(html, 'rates-content', format_content_to_html(sections['rates']))
+    html = replace_section(html, 'takeaways-content', format_content_to_html(sections['takeaways']))
     
     html = replace_section(html, 'rates-content', format_content_to_html(sections['rates']))
     html = replace_section(html, 'takeaways-content', format_content_to_html(sections['takeaways']))
