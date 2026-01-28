@@ -255,8 +255,15 @@ def update_html(sections, report_date_str=None):
     
     print(f"Updated index.html with new content at {timestamp}")
 
-import tkinter as tk
-from tkinter import messagebox
+# GUI Imports and Logic - Wrapped in Try/Except for headless environments (Streamlit Cloud)
+HAS_GUI = False
+try:
+    import tkinter as tk
+    from tkinter import messagebox
+    HAS_GUI = True
+except (ImportError, RuntimeError):
+    # RuntimeError can happen in headless Linux if DISPLAY is not set
+    pass
 
 def get_windows_theme():
     """Detect Windows theme (light/dark) via registry."""
@@ -300,8 +307,12 @@ def get_theme_colors(theme):
 def get_user_approval(default_message):
     """
     Opens a Tkinter popup to get user approval and optional edit of the commit message.
-    Returns (True, message) if confirmed, (False, None) if cancelled.
+    Automatically approves if GUI is not available (e.g. Streamlit Cloud).
     """
+    if not HAS_GUI:
+        print("Headless environment detected. Auto-approving deployment.")
+        return True, default_message
+
     result = {'approved': False, 'message': None}
     
     # Detect theme and get colors
@@ -421,255 +432,6 @@ def get_user_approval(default_message):
     # Cancel button
     cancel_btn = create_button(btn_frame, "Cancel", on_cancel, colors['cancel'], colors['cancel_hover'])
     cancel_btn.pack(side=tk.LEFT, padx=6)
-    
-    # Bind Enter and Escape keys
-    root.bind('<Return>', lambda e: on_confirm())
-    root.bind('<Escape>', lambda e: on_cancel())
-    
-    root.protocol("WM_DELETE_WINDOW", on_cancel)
-    root.mainloop()
-    
-    return result['approved'], result['message']
-    """
-    Opens a Tkinter popup to get user approval and optional edit of the commit message.
-    Returns (True, message) if confirmed, (False, None) if cancelled.
-    """
-    result = {'approved': False, 'message': None}
-    
-    # Detect theme and get colors
-    theme = get_windows_theme()
-    colors = get_theme_colors(theme)
-    
-    root = tk.Tk()
-    root.title("Deploy Report")
-    root.configure(bg=colors['bg'])
-    
-    # Center the window
-    window_width = 520
-    window_height = 200
-    screen_width = root.winfo_screenwidth()
-    screen_height = root.winfo_screenheight()
-    x = (screen_width - window_width) // 2
-    y = (screen_height - window_height) // 2
-    root.geometry(f"{window_width}x{window_height}+{x}+{y}")
-    
-    # Main container
-    container = tk.Frame(root, bg=colors['surface'], relief=tk.FLAT, bd=0)
-    container.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
-    
-    # Header with icon
-    header_frame = tk.Frame(container, bg=colors['surface'])
-    header_frame.pack(pady=(25, 5))
-    
-    header = tk.Label(
-        header_frame,
-        text="🚀  Confirm Deployment",
-        font=("Segoe UI", 13, "bold"),
-        bg=colors['surface'],
-        fg=colors['text']
-    )
-    header.pack()
-    
-    # Subheader
-    subheader = tk.Label(
-        container,
-        text="Review and edit the commit message before deploying:",
-        font=("Segoe UI", 9),
-        bg=colors['surface'],
-        fg=colors['subtext']
-    )
-    subheader.pack(pady=(0, 20))
-    
-    # Entry field with subtle border
-    entry_frame = tk.Frame(container, bg=colors['border'], relief=tk.FLAT, bd=0)
-    entry_frame.pack(padx=35, pady=(0, 25), fill=tk.X)
-    
-    entry = tk.Entry(
-        entry_frame,
-        font=("Segoe UI", 10),
-        bg=colors['surface'],
-        fg=colors['text'],
-        relief=tk.FLAT,
-        insertbackground=colors['accent'],
-        bd=0,
-        highlightthickness=0
-    )
-    entry.pack(padx=1, pady=1, fill=tk.X, ipady=8)
-    entry.insert(0, default_message)
-    entry.focus_set()
-    entry.select_range(0, tk.END)
-    
-    def on_confirm():
-        result['approved'] = True
-        result['message'] = entry.get()
-        root.destroy()
-        
-    def on_cancel():
-        result['approved'] = False
-        root.destroy()
-    
-    # Button frame
-    btn_frame = tk.Frame(container, bg=colors['surface'])
-    btn_frame.pack(pady=(0, 25))
-    
-    # Create buttons with hover effect
-    def create_button(parent, text, command, bg, hover_bg):
-        btn = tk.Button(
-            parent,
-            text=text,
-            command=command,
-            font=("Segoe UI", 9, "bold"),
-            bg=bg,
-            fg="white",
-            activebackground=hover_bg,
-            activeforeground="white",
-            relief=tk.FLAT,
-            cursor="hand2",
-            bd=0,
-            padx=35,
-            pady=10
-        )
-        
-        # Bind hover events
-        btn.bind("<Enter>", lambda e: btn.config(bg=hover_bg))
-        btn.bind("<Leave>", lambda e: btn.config(bg=bg))
-        
-        return btn
-    
-    # Deploy button
-    deploy_btn = create_button(btn_frame, "Deploy", on_confirm, colors['accent'], colors['accent_hover'])
-    deploy_btn.pack(side=tk.LEFT, padx=6)
-    
-    # Cancel button
-    cancel_btn = create_button(btn_frame, "Cancel", on_cancel, colors['cancel'], colors['cancel_hover'])
-    cancel_btn.pack(side=tk.LEFT, padx=6)
-    
-    # Bind Enter and Escape keys
-    root.bind('<Return>', lambda e: on_confirm())
-    root.bind('<Escape>', lambda e: on_cancel())
-    
-    root.protocol("WM_DELETE_WINDOW", on_cancel)
-    root.mainloop()
-    
-    return result['approved'], result['message']
-    """
-    Opens a Tkinter popup to get user approval and optional edit of the commit message.
-    Returns (True, message) if confirmed, (False, None) if cancelled.
-    """
-    result = {'approved': False, 'message': None}
-    
-    root = tk.Tk()
-    root.title("Deploy Report")
-    
-    # Windows 11 color scheme
-    BG_COLOR = "#f3f3f3"
-    SURFACE_COLOR = "#ffffff"
-    TEXT_COLOR = "#1f1f1f"
-    ACCENT_COLOR = "#0067c0"
-    BUTTON_HOVER = "#005a9e"
-    CANCEL_COLOR = "#8a8a8a"
-    CANCEL_HOVER = "#737373"
-    
-    root.configure(bg=BG_COLOR)
-    
-    # Center the window
-    window_width = 500
-    window_height = 180
-    screen_width = root.winfo_screenwidth()
-    screen_height = root.winfo_screenheight()
-    x = (screen_width - window_width) // 2
-    y = (screen_height - window_height) // 2
-    root.geometry(f"{window_width}x{window_height}+{x}+{y}")
-    
-    # Main container with padding
-    container = tk.Frame(root, bg=SURFACE_COLOR, relief=tk.FLAT)
-    container.pack(fill=tk.BOTH, expand=True, padx=1, pady=1)
-    
-    # Header
-    header = tk.Label(
-        container,
-        text="Confirm Deployment",
-        font=("Segoe UI", 12, "bold"),
-        bg=SURFACE_COLOR,
-        fg=TEXT_COLOR
-    )
-    header.pack(pady=(20, 5))
-    
-    # Subheader
-    subheader = tk.Label(
-        container,
-        text="Review and edit the commit message before deploying:",
-        font=("Segoe UI", 9),
-        bg=SURFACE_COLOR,
-        fg="#5f5f5f"
-    )
-    subheader.pack(pady=(0, 15))
-    
-    # Entry field with border
-    entry_frame = tk.Frame(container, bg="#e5e5e5", relief=tk.FLAT)
-    entry_frame.pack(padx=30, pady=(0, 20), fill=tk.X)
-    
-    entry = tk.Entry(
-        entry_frame,
-        font=("Segoe UI", 10),
-        bg=SURFACE_COLOR,
-        fg=TEXT_COLOR,
-        relief=tk.FLAT,
-        insertbackground=TEXT_COLOR,
-        bd=0
-    )
-    entry.pack(padx=1, pady=1, fill=tk.X, ipady=6)
-    entry.insert(0, default_message)
-    entry.focus_set()
-    
-    def on_confirm():
-        result['approved'] = True
-        result['message'] = entry.get()
-        root.destroy()
-        
-    def on_cancel():
-        result['approved'] = False
-        root.destroy()
-    
-    # Button frame
-    btn_frame = tk.Frame(container, bg=SURFACE_COLOR)
-    btn_frame.pack(pady=(0, 20))
-    
-    # Deploy button
-    deploy_btn = tk.Button(
-        btn_frame,
-        text="Deploy",
-        command=on_confirm,
-        font=("Segoe UI", 9),
-        bg=ACCENT_COLOR,
-        fg="white",
-        activebackground=BUTTON_HOVER,
-        activeforeground="white",
-        relief=tk.FLAT,
-        cursor="hand2",
-        bd=0,
-        padx=30,
-        pady=8
-    )
-    deploy_btn.pack(side=tk.LEFT, padx=5)
-    
-    # Cancel button
-    cancel_btn = tk.Button(
-        btn_frame,
-        text="Cancel",
-        command=on_cancel,
-        font=("Segoe UI", 9),
-        bg=CANCEL_COLOR,
-        fg="white",
-        activebackground=CANCEL_HOVER,
-        activeforeground="white",
-        relief=tk.FLAT,
-        cursor="hand2",
-        bd=0,
-        padx=30,
-        pady=8
-    )
-    cancel_btn.pack(side=tk.LEFT, padx=5)
     
     # Bind Enter and Escape keys
     root.bind('<Return>', lambda e: on_confirm())
