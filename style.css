@@ -152,6 +152,10 @@ footer {
     align-items: flex-end;
 }
 
+footer p {
+    margin-bottom: 0;
+}
+
 footer #last-updated {
     font-family: 'Courier New', Courier, monospace;
     font-size: 0.8rem;
