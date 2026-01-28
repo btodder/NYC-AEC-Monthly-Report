@@ -1,6 +1,7 @@
 # NYC AEC Monthly Report
 
-A "Swiss Style" news site that auto-updates from text reports.
+A news site that auto-updates from text reports.
+https://btodder.github.io/NYC-AEC-Monthly-Report/
 
 ## Project Structure
 
