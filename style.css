@@ -71,7 +71,45 @@ h1 {
 /* Sections */
 section {
     grid-column: span 12;
-    margin-bottom: 4rem;
+    margin-bottom: 2rem;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 20px;
+}
+
+/* Tablet/Desktop adjustments */
+/* Tablet/Desktop adjustments */
+@media (min-width: 768px) {
+    section {
+        grid-column: span 6;
+    }
+}
+
+h2 {
+    grid-column: 1 / -1;
+    font-size: 1.5rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    border-top: var(--line-weight) solid var(--text-color);
+    padding-top: 1rem;
+    margin-bottom: 1.5rem;
+    letter-spacing: -0.5px;
+}
+
+/* Content Styling */
+.content-block {
+    grid-column: 1 / -1;
+}
+
+p {
+    margin-bottom: 1rem;
+    max-width: 65ch;
+}
+
+/* Sections */
+section {
+    grid-column: span 12;
+    margin-bottom: 2rem;
     display: grid;
     grid-template-columns: repeat(12, 1fr);
     gap: 20px;
@@ -142,7 +180,7 @@ li::before {
 
 footer {
     grid-column: 1 / -1;
-    margin-top: 4rem;
+    margin-top: 1rem;
     padding-top: 2rem;
     border-top: 1px solid #ccc;
     font-size: 0.8rem;
