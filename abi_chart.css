@@ -1,0 +1,81 @@
+/* ABI Chart Styles */
+.abi-chart-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    /* Bars grow up from bottom if no baseline wrapper? Or custom layout? */
+    height: 200px;
+    width: 60%;
+    margin-bottom: 2rem;
+    position: relative;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    border: 1px solid #eee;
+    padding: 1rem;
+    background: #f9f9f9;
+}
+
+.chart-baseline {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background-color: #333;
+    z-index: 2;
+    /* Top will be calculated inline or 50% if range is symmetric */
+}
+
+.chart-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    /* Just a column wrapper */
+    height: 100%;
+    width: 20%;
+    position: relative;
+}
+
+.chart-bar {
+    width: 60%;
+    position: absolute;
+    /* Position relative to the container height */
+    left: 20%;
+    z-index: 1;
+    border: 1px solid #999;
+}
+
+.hatch-green {
+    background: repeating-linear-gradient(45deg,
+            #e6ffe6,
+            #e6ffe6 5px,
+            #ccffcc 5px,
+            #ccffcc 10px);
+    border-color: #4caf50;
+}
+
+.hatch-red {
+    background: repeating-linear-gradient(45deg,
+            #ffe6e6,
+            #ffe6e6 5px,
+            #ffcccc 5px,
+            #ffcccc 10px);
+    border-color: #f44336;
+}
+
+.chart-label {
+    position: absolute;
+    bottom: -25px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: #666;
+}
+
+.chart-value {
+    position: absolute;
+    font-size: 0.75rem;
+    font-weight: bold;
+    width: 100%;
+    text-align: center;
+}
+
+/* Value labeling positioning will need logic in script (top for pos, bottom for neg) */

@@ -75,21 +75,147 @@ def format_content_to_html(text):
         
     return "".join(html_output)
 
+# ABI Chart Logic
+import json
+
+ABI_HISTORY_FILE = os.path.join(BASE_DIR, 'abi_history.json')
+
+def update_abi_history(report_date_str, abi_section_text):
+    # Extract ABI value from text like "ABI Northeast - 45.1"
+    match = re.search(r'ABI Northeast\s*[—\-]\s*(\d+\.?\d*)', abi_section_text, re.IGNORECASE)
+    if not match:
+        print("Could not extract ABI value.")
+        return load_abi_history()
+
+    new_value = float(match.group(1))
+    
+    # Load existing history
+    history = load_abi_history()
+    
+    # Check if duplicate date
+    if history and history[-1]['date'] == report_date_str:
+        return history # Don't duplicate
+
+    # Append new entry
+    # Extract short month for label: "JAN<br>2026" -> "JAN"
+    month_label = report_date_str.split('<br>')[0] 
+    
+    history.append({
+        'date': month_label,
+        'value': new_value
+    })
+    
+    # Keep last 4
+    if len(history) > 4:
+        history = history[-4:]
+        
+    # Save
+    with open(ABI_HISTORY_FILE, 'w') as f:
+        json.dump(history, f)
+        
+    return history
+
+def load_abi_history():
+    if not os.path.exists(ABI_HISTORY_FILE):
+        return []
+    with open(ABI_HISTORY_FILE, 'r') as f:
+        return json.load(f)
+
+def generate_abi_chart_html(history):
+    if not history:
+        return ""
+
+    # Chart Configuration
+    min_y = 40
+    max_y = 60
+    range_y = max_y - min_y
+    baseline_y = 50
+    # Calculate baseline position percentage (from bottom)
+    baseline_pct = ((baseline_y - min_y) / range_y) * 100
+
+    html_parts = ['<div class="abi-chart-container">']
+    html_parts.append(f'<div class="chart-baseline" style="bottom: {baseline_pct}%;"></div>')
+
+    for entry in history:
+        val = entry['value']
+        label = entry['date']
+        
+        # Calculate height and position
+        is_positive = val >= baseline_y
+        
+        # Distance from baseline
+        diff = abs(val - baseline_y)
+        height_pct = (diff / range_y) * 100
+        
+        # If positive, bottom is baseline. If negative, top is baseline (bottom is baseline - height)
+        # Actually easier: use bottom position relative to scale
+        
+        if is_positive:
+            bottom_pos = baseline_pct
+            bar_class = "hatch-green"
+            val_pos_style = f"bottom: {height_pct + 5}%;"
+        else:
+            bottom_pos = baseline_pct - height_pct
+            bar_class = "hatch-red"
+            val_pos_style = f"top: {height_pct + 5}%;" # Inside/below bar? 
+            # For negative bars growing down, let's position:
+            # bottom = (val - min_y) / range * 100
+            
+        # Simplified positioning:
+        bar_bottom_pct = ((val - min_y) / range_y) * 100
+        bar_height_pct = height_pct
+        
+        # Correct logic for absolute bars:
+        # If val > 50: bottom = 50%, height = (val-50)%
+        # If val < 50: top = 50% (from bottom), or bottom = val%, height = (50-val)%
+        
+        if is_positive:
+            style = f"bottom: {baseline_pct}%; height: {height_pct}%;"
+            val_html = f'<div class="chart-value" style="bottom: 100%; margin-bottom: 5px;">{val}</div>'
+        else:
+             # For negative, bar starts at val and goes up to baseline
+             style = f"bottom: {((val - min_y)/range_y)*100}%; height: {height_pct}%;"
+             val_html = f'<div class="chart-value" style="top: 100%; margin-top: 5px;">{val}</div>'
+
+        col_html = f'''
+        <div class="chart-column">
+            <div class="chart-bar {bar_class}" style="{style}">
+                {val_html}
+            </div>
+            <div class="chart-label">{label}</div>
+        </div>
+        '''
+        html_parts.append(col_html)
+
+    html_parts.append('</div>')
+    return "".join(html_parts)
+
 def update_html(sections, report_date_str=None):
     with open(INDEX_FILE, 'r', encoding='utf-8') as f:
         html = f.read()
 
+    # ABI Chart Injection
+    abi_history = []
+    if report_date_str:
+        abi_history = update_abi_history(report_date_str, sections['abi'])
+    
+    chart_html = generate_abi_chart_html(abi_history)
+    
+    # Prepend chart to ABI content if it exists
+    full_abi_content = chart_html + format_content_to_html(sections['abi'])
+
     # Function to replace content inside a div with specific ID
-    def replace_section(html_content, section_id, new_text):
-        formatted_html = format_content_to_html(new_text)
+    def replace_section(html_content, section_id, new_html):
         pattern = f'(<div id="{section_id}"[^>]*>)(.*?)(</div>)'
-        replacement = f'\\1{formatted_html}\\3'
+        replacement = f'\\1{new_html}\\3'
         return re.sub(pattern, replacement, html_content, flags=re.DOTALL)
 
-    html = replace_section(html, 'filings-content', sections['filings'])
-    html = replace_section(html, 'abi-content', sections['abi'])
-    html = replace_section(html, 'rates-content', sections['rates'])
-    html = replace_section(html, 'takeaways-content', sections['takeaways'])
+    html = replace_section(html, 'filings-content', format_content_to_html(sections['filings']))
+    # Directly inject full_abi_content since it already contains HTML
+    html = re.sub(r'(<div id="abi-content"[^>]*>)(.*?)(</div>)', f'\\1{full_abi_content}\\3', html, flags=re.DOTALL)
+    
+    html = replace_section(html, 'rates-content', format_content_to_html(sections['rates']))
+    html = replace_section(html, 'takeaways-content', format_content_to_html(sections['takeaways']))
 
     # Update Timestamp
     timestamp = datetime.now().strftime("%m-%d-%y")
@@ -150,6 +276,8 @@ def main():
         
     except Exception as e:
         print(f"Error processing file: {e}")
+        import traceback
+        traceback.print_exc()
 
 if __name__ == "__main__":
     main()
