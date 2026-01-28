@@ -31,6 +31,7 @@ def get_theme_colors(theme):
         return {
             'bg': '#1e1e1e',
             'surface': '#2d2d2d',
+            'surface_dark': '#252525',  # Slightly darker for content area
             'text': '#ffffff',
             'subtext': '#b4b4b4',
             'accent': '#0078d4',
@@ -43,6 +44,7 @@ def get_theme_colors(theme):
         return {
             'bg': '#f0f0f0',
             'surface': '#ffffff',
+            'surface_dark': '#f5f5f5',  # Slightly darker for content area
             'text': '#1f1f1f',
             'subtext': '#5f5f5f',
             'accent': '#0067c0',
@@ -144,6 +146,30 @@ def verify_manual_push():
     close_btn.bind("<Enter>", lambda e: close_btn.config(bg="#c42b1c", fg="white"))
     close_btn.bind("<Leave>", lambda e: close_btn.config(bg=colors['surface'], fg=colors['text']))
     
+    # Minimize button
+    def minimize_window():
+        root.overrideredirect(False)
+        root.iconify()
+        root.after(100, lambda: root.overrideredirect(True))
+    
+    min_btn = tk.Button(
+        title_bar,
+        text="─",
+        command=minimize_window,
+        font=("Segoe UI", 12),
+        bg=colors['surface'],
+        fg=colors['text'],
+        activebackground=colors['border'],
+        activeforeground=colors['text'],
+        relief=tk.FLAT,
+        bd=0,
+        width=5,
+        cursor="hand2"
+    )
+    min_btn.pack(side=tk.RIGHT, fill=tk.Y)
+    min_btn.bind("<Enter>", lambda e: min_btn.config(bg=colors['border']))
+    min_btn.bind("<Leave>", lambda e: min_btn.config(bg=colors['surface']))
+    
     # Make title bar draggable
     def start_drag(event):
         root._drag_x = event.x
@@ -159,8 +185,8 @@ def verify_manual_push():
     title_label.bind("<Button-1>", start_drag)
     title_label.bind("<B1-Motion>", do_drag)
     
-    # Main container fills window
-    container = tk.Frame(root, bg=colors['surface'])
+    # Main container fills window - slightly darker background
+    container = tk.Frame(root, bg=colors['surface_dark'])
     container.pack(fill=tk.BOTH, expand=True)
     
     # Configure grid for vertical centering
@@ -188,7 +214,7 @@ def verify_manual_push():
         highlightthickness=0,
         justify=tk.CENTER  # Center text in entry
     )
-    entry.grid(row=0, column=0, sticky="nsew", padx=1, pady=1)
+    entry.grid(row=0, column=0, sticky="nsew", padx=2, pady=2)  # Doubled border width
     entry.insert(0, original_message)
     entry.focus_set()
     entry.select_range(0, tk.END)
