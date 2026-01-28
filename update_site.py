@@ -380,17 +380,17 @@ def get_user_approval(default_message):
         except:
             pass
             
-    # Main frame
+    # Main wrapper with border (simulates 1px border via padding)
     main_frame = ctk.CTkFrame(root, fg_color=colors['surface'], corner_radius=0)
-    main_frame.pack(fill=tk.BOTH, expand=True)
+    main_frame.pack(fill=tk.BOTH, expand=True, padx=BORDER_WIDTH, pady=BORDER_WIDTH)
 
     # Title bar
-    title_bar = ctk.CTkFrame(main_frame, fg_color=colors['surface'], height=TITLE_HEIGHT, corner_radius=0)
-    title_bar.pack(fill=tk.X)
+    title_bar = ctk.CTkFrame(main_frame, fg_color=colors['surface'], height=TITLE_HEIGHT - BORDER_WIDTH, corner_radius=0)
+    title_bar.pack(fill=tk.X, side=tk.TOP)
     title_bar.pack_propagate(False)
 
     title_label = ctk.CTkLabel(title_bar, text="🚀  Confirm Deployment", font=("Segoe UI", 13, "bold"), text_color=colors['text'])
-    title_label.pack(side=tk.LEFT, padx=15)
+    title_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
     
     # Minimize button
     def minimize_window():
@@ -424,15 +424,24 @@ def get_user_approval(default_message):
     # Main container
     container = ctk.CTkFrame(main_frame, fg_color=colors['surface_dark'], corner_radius=0)
     container.pack(fill=tk.BOTH, expand=True)
+
+    # Configure grid for vertical centering
+    container.grid_rowconfigure(0, weight=1)
+    container.grid_rowconfigure(1, weight=0)
+    container.grid_rowconfigure(2, weight=0)
+    container.grid_rowconfigure(3, weight=1)
+    container.grid_columnconfigure(0, weight=1)
     
-    # Subheader
+    # Subheader (Placed in grid row 0, bottom aligned?)
+    # Verify_push doesn't have a subheader, but update_site DOES.
+    # Let's put subheader in Row 0.
     subheader = ctk.CTkLabel(
         container,
         text="Review and edit the commit message before deploying:",
         font=("Segoe UI", 12),
         text_color=colors['subtext']
     )
-    subheader.pack(pady=(20, 10))
+    subheader.grid(row=0, column=0, pady=(20, 10), sticky="s")
     
     # Entry
     entry = ctk.CTkEntry(
@@ -446,16 +455,19 @@ def get_user_approval(default_message):
         corner_radius=CORNER_RADIUS,
         justify="center"
     )
-    entry.pack(padx=PADDING, pady=(0, PADDING), fill=tk.X)
+    entry.grid(row=1, column=0, padx=PADDING, pady=(0, PADDING), sticky="ew")
     entry.insert(0, default_message)
     entry.focus_set()
     entry.select_range(0, tk.END)
     
     # Buttons
-    btn_frame = ctk.CTkFrame(container, fg_color=colors['surface_dark'], height=ELEMENT_HEIGHT)
-    btn_frame.pack(padx=PADDING, pady=(0, PADDING), fill=tk.X)
+    btn_frame = ctk.CTkFrame(container, fg_color=colors['surface_dark'], height=ELEMENT_HEIGHT, corner_radius=0)
+    btn_frame.grid(row=2, column=0, padx=PADDING, sticky="ew")
+    btn_frame.grid_propagate(False)
     btn_frame.grid_columnconfigure(0, weight=1)
-    btn_frame.grid_columnconfigure(1, weight=1)
+    btn_frame.grid_columnconfigure(1, weight=0, minsize=PADDING) # Spacing between buttons
+    btn_frame.grid_columnconfigure(2, weight=1)
+    btn_frame.grid_rowconfigure(0, weight=1)
     
     def on_confirm():
         result['approved'] = True
@@ -471,14 +483,14 @@ def get_user_approval(default_message):
         font=("Segoe UI", 13, "bold"), fg_color=colors['accent'], text_color="white",
         hover_color=colors['accent_hover'], height=ELEMENT_HEIGHT, corner_radius=CORNER_RADIUS
     )
-    confirm_btn.grid(row=0, column=0, padx=(0, PADDING/2), sticky="ew")
+    confirm_btn.grid(row=0, column=0, sticky="nsew")
     
     cancel_btn = ctk.CTkButton(
         btn_frame, text="Cancel", command=on_cancel,
         font=("Segoe UI", 13, "bold"), fg_color=colors['cancel'], text_color="white",
         hover_color=colors['cancel_hover'], height=ELEMENT_HEIGHT, corner_radius=CORNER_RADIUS
     )
-    cancel_btn.grid(row=0, column=1, padx=(PADDING/2, 0), sticky="ew")
+    cancel_btn.grid(row=0, column=2, sticky="nsew")
     
     root.bind('<Return>', lambda e: on_confirm())
     root.bind('<Escape>', lambda e: on_cancel())
