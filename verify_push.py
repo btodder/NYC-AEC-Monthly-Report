@@ -112,7 +112,7 @@ def verify_manual_push():
     
     # Spacing and sizing
     PADDING = 30
-    ELEMENT_HEIGHT = 50
+    ELEMENT_HEIGHT = 88
     
     # Main container fills window
     container = tk.Frame(root, bg=colors['surface'])
