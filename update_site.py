@@ -275,13 +275,14 @@ def update_html(sections, report_date_str=None):
     print(f"Updated index.html with new content at {timestamp}")
 
 # GUI Imports and Logic - Wrapped in Try/Except for headless environments (Streamlit Cloud)
+# GUI Imports and Logic - Wrapped in Try/Except for headless environments
 HAS_GUI = False
 try:
     import tkinter as tk
+    import customtkinter as ctk
     from tkinter import messagebox
     HAS_GUI = True
 except (ImportError, RuntimeError):
-    # RuntimeError can happen in headless Linux if DISPLAY is not set
     pass
 
 def get_windows_theme():
@@ -301,32 +302,33 @@ def get_theme_colors(theme):
     if theme == "dark":
         return {
             'bg': '#202020',
-            'surface': '#2d2d2d',
+            'surface': '#2d2d2d',       # Title bar
+            'surface_dark': '#252525',  # Content area
             'text': '#ffffff',
             'subtext': '#b4b4b4',
             'accent': '#60cdff',
             'accent_hover': '#4cb8eb',
             'cancel': '#5a5a5a',
-            'cancel_hover': '#6e6e6e',
+            'cancel_hover': '#c42b1c',  # Red hover for cancel
             'border': '#3f3f3f'
         }
     else:
         return {
             'bg': '#f3f3f3',
-            'surface': '#ffffff',
+            'surface': '#ffffff',       # Title bar
+            'surface_dark': '#f5f5f5',  # Content area
             'text': '#1f1f1f',
             'subtext': '#5f5f5f',
             'accent': '#0067c0',
             'accent_hover': '#005a9e',
             'cancel': '#8a8a8a',
-            'cancel_hover': '#737373',
+            'cancel_hover': '#c42b1c',  # Red hover for cancel
             'border': '#e5e5e5'
         }
 
 def get_user_approval(default_message):
     """
-    Opens a Tkinter popup to get user approval and optional edit of the commit message.
-    Automatically approves if GUI is not available (e.g. Streamlit Cloud).
+    Opens a Modern CustomTkinter popup to get user approval.
     """
     if not HAS_GUI:
         print("Headless environment detected. Auto-approving deployment.")
@@ -334,17 +336,30 @@ def get_user_approval(default_message):
 
     result = {'approved': False, 'message': None}
     
-    # Detect theme and get colors
+    # Detect theme
     theme = get_windows_theme()
     colors = get_theme_colors(theme)
+    ctk.set_appearance_mode("Dark" if theme == "dark" else "Light")
+    ctk.set_default_color_theme("blue")
+    ctk.set_widget_scaling(1.0)
     
-    root = tk.Tk()
+    root = ctk.CTk()
     root.title("Deploy Report")
-    root.configure(bg=colors['bg'])
+    root.overrideredirect(True)
+    root.configure(fg_color=colors['border'])
     
-    # Center the window
-    window_width = 520
-    window_height = 200
+    # Spacing and sizing (scaled 2/3)
+    PADDING = 20
+    ELEMENT_HEIGHT = 57
+    TITLE_HEIGHT = 48
+    BORDER_WIDTH = 1
+    CORNER_RADIUS = 3
+    
+    # Needs to be slightly taller for the header info
+    window_width = 467
+    window_height = 340 # Increased height for header/subheader
+    
+    # Center
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
     x = (screen_width - window_width) // 2
@@ -360,52 +375,83 @@ def get_user_approval(default_message):
             ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, 20, ctypes.byref(value), ctypes.sizeof(value))
         except:
             pass
+            
+    # Main frame
+    main_frame = ctk.CTkFrame(root, fg_color=colors['surface'], corner_radius=0)
+    main_frame.pack(fill=tk.BOTH, expand=True)
+
+    # Title bar
+    title_bar = ctk.CTkFrame(main_frame, fg_color=colors['surface'], height=TITLE_HEIGHT, corner_radius=0)
+    title_bar.pack(fill=tk.X)
+    title_bar.pack_propagate(False)
+
+    title_label = ctk.CTkLabel(title_bar, text="🚀  Confirm Deployment", font=("Segoe UI", 13, "bold"), text_color=colors['text'])
+    title_label.pack(side=tk.LEFT, padx=15)
+    
+    # Minimize button
+    def minimize_window():
+        root.overrideredirect(False)
+        root.iconify()
+        def restore_window(event=None):
+            if root.state() == 'iconic': return
+            root.overrideredirect(True)
+            root.unbind('<Map>')
+        root.bind('<Map>', restore_window)
+    
+    min_btn = ctk.CTkButton(
+        title_bar, text="─", command=minimize_window,
+        font=("Segoe UI", 14), fg_color=colors['surface'], text_color=colors['text'],
+        hover_color=colors['border'], width=50, height=TITLE_HEIGHT - BORDER_WIDTH, corner_radius=0
+    )
+    min_btn.pack(side=tk.RIGHT)
+    
+    # Make title bar draggable
+    def start_drag(event): root._drag_x = event.x; root._drag_y = event.y
+    def do_drag(event):
+        x = root.winfo_x() + event.x - root._drag_x
+        y = root.winfo_y() + event.y - root._drag_y
+        root.geometry(f"+{x}+{y}")
+    
+    title_bar.bind("<Button-1>", start_drag)
+    title_bar.bind("<B1-Motion>", do_drag)
+    title_label.bind("<Button-1>", start_drag)
+    title_label.bind("<B1-Motion>", do_drag)
     
     # Main container
-    container = tk.Frame(root, bg=colors['surface'], relief=tk.FLAT, bd=0)
-    container.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
-    
-    # Header with icon
-    header_frame = tk.Frame(container, bg=colors['surface'])
-    header_frame.pack(pady=(25, 5))
-    
-    header = tk.Label(
-        header_frame,
-        text="🚀  Confirm Deployment",
-        font=("Segoe UI", 13, "bold"),
-        bg=colors['surface'],
-        fg=colors['text']
-    )
-    header.pack()
+    container = ctk.CTkFrame(main_frame, fg_color=colors['surface_dark'], corner_radius=0)
+    container.pack(fill=tk.BOTH, expand=True)
     
     # Subheader
-    subheader = tk.Label(
+    subheader = ctk.CTkLabel(
         container,
         text="Review and edit the commit message before deploying:",
-        font=("Segoe UI", 9),
-        bg=colors['surface'],
-        fg=colors['subtext']
+        font=("Segoe UI", 12),
+        text_color=colors['subtext']
     )
-    subheader.pack(pady=(0, 20))
+    subheader.pack(pady=(20, 10))
     
-    # Entry field with subtle border
-    entry_frame = tk.Frame(container, bg=colors['border'], relief=tk.FLAT, bd=0)
-    entry_frame.pack(padx=35, pady=(0, 25), fill=tk.X)
-    
-    entry = tk.Entry(
-        entry_frame,
-        font=("Segoe UI", 10),
-        bg=colors['surface'],
-        fg=colors['text'],
-        relief=tk.FLAT,
-        insertbackground=colors['accent'],
-        bd=0,
-        highlightthickness=0
+    # Entry
+    entry = ctk.CTkEntry(
+        container,
+        font=("Segoe UI", 13),
+        fg_color=colors['surface'],
+        text_color=colors['text'],
+        border_color=colors['border'],
+        border_width=1,
+        height=ELEMENT_HEIGHT,
+        corner_radius=CORNER_RADIUS,
+        justify="center"
     )
-    entry.pack(padx=1, pady=1, fill=tk.X, ipady=8)
+    entry.pack(padx=PADDING, pady=(0, PADDING), fill=tk.X)
     entry.insert(0, default_message)
     entry.focus_set()
     entry.select_range(0, tk.END)
+    
+    # Buttons
+    btn_frame = ctk.CTkFrame(container, fg_color=colors['surface_dark'], height=ELEMENT_HEIGHT)
+    btn_frame.pack(padx=PADDING, pady=(0, PADDING), fill=tk.X)
+    btn_frame.grid_columnconfigure(0, weight=1)
+    btn_frame.grid_columnconfigure(1, weight=1)
     
     def on_confirm():
         result['approved'] = True
@@ -415,47 +461,23 @@ def get_user_approval(default_message):
     def on_cancel():
         result['approved'] = False
         root.destroy()
+
+    confirm_btn = ctk.CTkButton(
+        btn_frame, text="Deploy", command=on_confirm,
+        font=("Segoe UI", 13, "bold"), fg_color=colors['accent'], text_color="white",
+        hover_color=colors['accent_hover'], height=ELEMENT_HEIGHT, corner_radius=CORNER_RADIUS
+    )
+    confirm_btn.grid(row=0, column=0, padx=(0, PADDING/2), sticky="ew")
     
-    # Button frame
-    btn_frame = tk.Frame(container, bg=colors['surface'])
-    btn_frame.pack(pady=(0, 25))
+    cancel_btn = ctk.CTkButton(
+        btn_frame, text="Cancel", command=on_cancel,
+        font=("Segoe UI", 13, "bold"), fg_color=colors['cancel'], text_color="white",
+        hover_color=colors['cancel_hover'], height=ELEMENT_HEIGHT, corner_radius=CORNER_RADIUS
+    )
+    cancel_btn.grid(row=0, column=1, padx=(PADDING/2, 0), sticky="ew")
     
-    # Create buttons with hover effect and MUCH larger padding
-    def create_button(parent, text, command, bg, hover_bg):
-        btn = tk.Button(
-            parent,
-            text=text,
-            command=command,
-            font=("Segoe UI", 10, "bold"),
-            bg=bg,
-            fg="white",
-            activebackground=hover_bg,
-            activeforeground="white",
-            relief=tk.FLAT,
-            cursor="hand2",
-            bd=0,
-            padx=50,
-            pady=12
-        )
-        
-        # Bind hover events
-        btn.bind("<Enter>", lambda e: btn.config(bg=hover_bg))
-        btn.bind("<Leave>", lambda e: btn.config(bg=bg))
-        
-        return btn
-    
-    # Deploy button
-    deploy_btn = create_button(btn_frame, "Deploy", on_confirm, colors['accent'], colors['accent_hover'])
-    deploy_btn.pack(side=tk.LEFT, padx=6)
-    
-    # Cancel button
-    cancel_btn = create_button(btn_frame, "Cancel", on_cancel, colors['cancel'], colors['cancel_hover'])
-    cancel_btn.pack(side=tk.LEFT, padx=6)
-    
-    # Bind Enter and Escape keys
     root.bind('<Return>', lambda e: on_confirm())
     root.bind('<Escape>', lambda e: on_cancel())
-    
     root.protocol("WM_DELETE_WINDOW", on_cancel)
     root.mainloop()
     
