@@ -95,8 +95,8 @@ def verify_manual_push():
     root.configure(bg=colors['bg'])
     
     # Fixed window size - not resizable
-    window_width = 800
-    window_height = 495
+    window_width = 750
+    window_height = 465
     root.resizable(False, False)
     
     # Center the window
@@ -114,9 +114,20 @@ def verify_manual_push():
     container = tk.Frame(root, bg=colors['surface'], relief=tk.FLAT, bd=0)
     container.pack(fill=tk.BOTH, expand=True, padx=1, pady=1)
     
+    # Uniform spacing value
+    SPACING = 30
+    
+    # Content frame for vertical centering
+    content_frame = tk.Frame(container, bg=colors['surface'])
+    content_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+    
     # Entry field with border
-    entry_frame = tk.Frame(container, bg=colors['border'], relief=tk.FLAT, bd=0)
-    entry_frame.pack(padx=30, pady=(25, 0), fill=tk.X)
+    entry_frame = tk.Frame(content_frame, bg=colors['border'], relief=tk.FLAT, bd=0, width=window_width - (SPACING * 2))
+    entry_frame.pack(padx=0, pady=(0, SPACING), fill=tk.X)
+    entry_frame.pack_propagate(False)
+    
+    # Set entry frame width explicitly
+    entry_frame.configure(width=window_width - (SPACING * 2) - 2, height=40)
     
     entry = tk.Entry(
         entry_frame,
@@ -128,7 +139,7 @@ def verify_manual_push():
         bd=0,
         highlightthickness=0
     )
-    entry.pack(padx=1, pady=1, fill=tk.X, ipady=8)
+    entry.pack(padx=1, pady=1, fill=tk.BOTH, expand=True)
     entry.insert(0, original_message)
     entry.focus_set()
     entry.select_range(0, tk.END)
@@ -142,9 +153,9 @@ def verify_manual_push():
         result_dict['approved'] = False
         root.destroy()
     
-    # Button frame - same padding as entry field
-    btn_frame = tk.Frame(container, bg=colors['surface'])
-    btn_frame.pack(padx=30, pady=(15, 25), fill=tk.X)
+    # Button frame - same width as entry
+    btn_frame = tk.Frame(content_frame, bg=colors['surface'], width=window_width - (SPACING * 2) - 2)
+    btn_frame.pack(padx=0, fill=tk.X)
     
     # Buttons that fill the frame width equally
     confirm_btn = tk.Button(
