@@ -210,6 +210,25 @@ def update_html(sections, report_date_str=None):
     # Matches any line containing "ABI Northeast" and a number
     cleaned_abi_text = re.sub(r'(?m)^.*?ABI Northeast.*?\d+.*(?:\r?\n)?', '', sections['abi'], flags=re.IGNORECASE)
     
+    # Remove existing manual Trend line to replace with verified calculation
+    cleaned_abi_text = re.sub(r'(?m)^.*?Trend.*(?:\r?\n)?', '', cleaned_abi_text, flags=re.IGNORECASE)
+    
+    # Generate Verified Trend Bullet
+    trend_bullet = ""
+    if len(abi_history) >= 2:
+        curr = abi_history[-1]
+        prev = abi_history[-2]
+        diff = curr['value'] - prev['value']
+        
+        direction = "STABLE"
+        if diff > 0.05: direction = "UP"
+        elif diff < -0.05: direction = "DOWN"
+        
+        trend_bullet = f"Trend — {direction} ({diff:+.1f} pts from {prev['month']} {prev['year']})"
+        
+        # Prepend verified trend to text
+        cleaned_abi_text = f"• {trend_bullet}\n" + cleaned_abi_text.strip()
+    
     # Prepend chart to ABI content if it exists
     full_abi_content = chart_html + format_content_to_html(cleaned_abi_text)
     
