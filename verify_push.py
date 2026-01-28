@@ -1,3 +1,4 @@
+import customtkinter as ctk
 import tkinter as tk
 import sys
 import subprocess
@@ -6,10 +7,10 @@ import ctypes
 
 # Enable DPI awareness for crisp rendering on high-res displays
 try:
-    ctypes.windll.shcore.SetProcessDpiAwareness(2)  # Per-monitor DPI aware
+    ctypes.windll.shcore.SetProcessDpiAwareness(2)
 except:
     try:
-        ctypes.windll.user32.SetProcessDPIAware()  # Fallback
+        ctypes.windll.user32.SetProcessDPIAware()
     except:
         pass
 
@@ -31,40 +32,28 @@ def get_theme_colors(theme):
         return {
             'bg': '#1e1e1e',
             'surface': '#2d2d2d',
-            'surface_dark': '#252525',  # Slightly darker for content area
+            'surface_dark': '#252525',
             'text': '#ffffff',
             'subtext': '#b4b4b4',
             'accent': '#0078d4',
             'accent_hover': '#1a86d9',
             'cancel': '#484848',
-            'cancel_hover': '#5a5a5a',
+            'cancel_hover': '#c42b1c',  # Red on hover
             'border': '#3f3f3f'
         }
     else:
         return {
             'bg': '#f0f0f0',
             'surface': '#ffffff',
-            'surface_dark': '#f5f5f5',  # Slightly darker for content area
+            'surface_dark': '#f5f5f5',
             'text': '#1f1f1f',
             'subtext': '#5f5f5f',
             'accent': '#0067c0',
             'accent_hover': '#005a9e',
             'cancel': '#6e6e6e',
-            'cancel_hover': '#5a5a5a',
+            'cancel_hover': '#c42b1c',  # Red on hover
             'border': '#d0d0d0'
         }
-
-def apply_dark_title_bar(root):
-    """Apply dark title bar on Windows 10/11."""
-    try:
-        root.update()
-        hwnd = ctypes.windll.user32.GetParent(root.winfo_id())
-        value = ctypes.c_int(1)
-        ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, 20, ctypes.byref(value), ctypes.sizeof(value))
-        root.withdraw()
-        root.deiconify()
-    except:
-        pass
 
 def verify_manual_push():
     """
@@ -92,17 +81,23 @@ def verify_manual_push():
     theme = get_windows_theme()
     colors = get_theme_colors(theme)
     
-    root = tk.Tk()
-    root.overrideredirect(True)  # Remove default title bar
-    root.configure(bg=colors['border'])  # Border color as background
+    # Set customtkinter appearance
+    ctk.set_appearance_mode("dark" if theme == "dark" else "light")
+    ctk.set_default_color_theme("blue")
+    
+    # Create window
+    root = ctk.CTk()
+    root.overrideredirect(True)
+    root.configure(fg_color=colors['border'])
     
     # Spacing and sizing
     PADDING = 30
     ELEMENT_HEIGHT = 85
     TITLE_HEIGHT = 54
     BORDER_WIDTH = 2
+    CORNER_RADIUS = 4
     
-    # Fixed window size (including custom title bar)
+    # Fixed window size
     window_width = 700
     window_height = 375 + TITLE_HEIGHT
     
@@ -114,62 +109,53 @@ def verify_manual_push():
     root.geometry(f"{window_width}x{window_height}+{x}+{y}")
     
     # Apply rounded corners on Windows 11
-    root.update()  # Ensure window exists before getting handle
+    root.update()
     try:
-        import ctypes.wintypes
         hwnd = ctypes.windll.user32.GetParent(root.winfo_id())
         if hwnd == 0:
             hwnd = root.winfo_id()
-        # DWMWA_WINDOW_CORNER_PREFERENCE = 33, DWMWCP_ROUND = 2
         preference = ctypes.c_int(2)
-        ctypes.windll.dwmapi.DwmSetWindowAttribute(
-            hwnd, 33, ctypes.byref(preference), ctypes.sizeof(preference)
-        )
-    except Exception as e:
-        print(f"Rounded corners not applied: {e}")
+        ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, 33, ctypes.byref(preference), ctypes.sizeof(preference))
+    except:
+        pass
     
     # Main wrapper with border
-    main_frame = tk.Frame(root, bg=colors['surface'])
+    main_frame = ctk.CTkFrame(root, fg_color=colors['surface'], corner_radius=0)
     main_frame.pack(fill=tk.BOTH, expand=True, padx=BORDER_WIDTH, pady=BORDER_WIDTH)
     
     # Custom title bar
-    title_bar = tk.Frame(main_frame, bg=colors['surface'], height=TITLE_HEIGHT - BORDER_WIDTH)
+    title_bar = ctk.CTkFrame(main_frame, fg_color=colors['surface'], height=TITLE_HEIGHT - BORDER_WIDTH, corner_radius=0)
     title_bar.pack(fill=tk.X, side=tk.TOP)
     title_bar.pack_propagate(False)
     
-    # Title text - centered, matching font size
-    title_label = tk.Label(
+    # Title text - centered
+    title_label = ctk.CTkLabel(
         title_bar,
         text="Git Push Detected, Review Commit Message:",
-        font=("Segoe UI", 11),
-        bg=colors['surface'],
-        fg=colors['text']
+        font=("Segoe UI", 13),
+        text_color=colors['text']
     )
     title_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
     
-    # Minimize button only (no close button)
+    # Minimize button
     def minimize_window():
         root.overrideredirect(False)
         root.iconify()
         root.after(100, lambda: root.overrideredirect(True))
     
-    min_btn = tk.Button(
+    min_btn = ctk.CTkButton(
         title_bar,
         text="─",
         command=minimize_window,
-        font=("Segoe UI", 12),
-        bg=colors['surface'],
-        fg=colors['text'],
-        activebackground=colors['border'],
-        activeforeground=colors['text'],
-        relief=tk.FLAT,
-        bd=0,
-        width=5,
-        cursor="hand2"
+        font=("Segoe UI", 14),
+        fg_color=colors['surface'],
+        text_color=colors['text'],
+        hover_color=colors['border'],
+        width=50,
+        height=TITLE_HEIGHT - BORDER_WIDTH,
+        corner_radius=0
     )
-    min_btn.pack(side=tk.RIGHT, fill=tk.Y)
-    min_btn.bind("<Enter>", lambda e: min_btn.config(bg=colors['border']))
-    min_btn.bind("<Leave>", lambda e: min_btn.config(bg=colors['surface']))
+    min_btn.pack(side=tk.RIGHT)
     
     # Make title bar draggable
     def start_drag(event):
@@ -186,36 +172,30 @@ def verify_manual_push():
     title_label.bind("<Button-1>", start_drag)
     title_label.bind("<B1-Motion>", do_drag)
     
-    # Main container fills window - slightly darker background
-    container = tk.Frame(main_frame, bg=colors['surface_dark'])
+    # Main container - darker background
+    container = ctk.CTkFrame(main_frame, fg_color=colors['surface_dark'], corner_radius=0)
     container.pack(fill=tk.BOTH, expand=True)
     
     # Configure grid for vertical centering
-    container.grid_rowconfigure(0, weight=1)  # Top spacer
-    container.grid_rowconfigure(1, weight=0)  # Entry
-    container.grid_rowconfigure(2, weight=0)  # Buttons
-    container.grid_rowconfigure(3, weight=1)  # Bottom spacer
+    container.grid_rowconfigure(0, weight=1)
+    container.grid_rowconfigure(1, weight=0)
+    container.grid_rowconfigure(2, weight=0)
+    container.grid_rowconfigure(3, weight=1)
     container.grid_columnconfigure(0, weight=1)
     
-    # Entry frame with border
-    entry_outer = tk.Frame(container, bg=colors['border'], height=ELEMENT_HEIGHT)
-    entry_outer.grid(row=1, column=0, sticky="ew", padx=PADDING, pady=(0, PADDING))
-    entry_outer.grid_propagate(False)
-    entry_outer.grid_columnconfigure(0, weight=1)
-    entry_outer.grid_rowconfigure(0, weight=1)
-    
-    entry = tk.Entry(
-        entry_outer,
-        font=("Segoe UI", 11),
-        bg=colors['surface'],
-        fg=colors['text'],
-        relief=tk.FLAT,
-        insertbackground=colors['accent'],
-        bd=0,
-        highlightthickness=0,
-        justify=tk.CENTER  # Center text in entry
+    # Entry with rounded corners
+    entry = ctk.CTkEntry(
+        container,
+        font=("Segoe UI", 13),
+        fg_color=colors['surface'],
+        text_color=colors['text'],
+        border_color=colors['border'],
+        border_width=2,
+        height=ELEMENT_HEIGHT,
+        corner_radius=CORNER_RADIUS,
+        justify="center"
     )
-    entry.grid(row=0, column=0, sticky="nsew", padx=2, pady=2)  # Doubled border width
+    entry.grid(row=1, column=0, sticky="ew", padx=PADDING, pady=(0, PADDING))
     entry.insert(0, original_message)
     entry.focus_set()
     entry.select_range(0, tk.END)
@@ -229,50 +209,40 @@ def verify_manual_push():
         result_dict['approved'] = False
         root.destroy()
     
-    # Button frame - use darker background like container
-    btn_frame = tk.Frame(container, bg=colors['surface_dark'], height=ELEMENT_HEIGHT)
+    # Button frame
+    btn_frame = ctk.CTkFrame(container, fg_color=colors['surface_dark'], height=ELEMENT_HEIGHT, corner_radius=0)
     btn_frame.grid(row=2, column=0, sticky="ew", padx=PADDING)
     btn_frame.grid_propagate(False)
     btn_frame.grid_columnconfigure(0, weight=1)
-    btn_frame.grid_columnconfigure(1, weight=0, minsize=PADDING)  # Gap
+    btn_frame.grid_columnconfigure(1, weight=0, minsize=PADDING)
     btn_frame.grid_columnconfigure(2, weight=1)
     btn_frame.grid_rowconfigure(0, weight=1)
     
-    # Confirm button
-    confirm_btn = tk.Button(
+    # Confirm button with rounded corners
+    confirm_btn = ctk.CTkButton(
         btn_frame,
         text="Confirm",
         command=on_confirm,
-        font=("Segoe UI", 11),
-        bg=colors['accent'],
-        fg="white",
-        activebackground=colors['accent_hover'],
-        activeforeground="white",
-        relief=tk.FLAT,
-        cursor="hand2",
-        bd=0
+        font=("Segoe UI", 13),
+        fg_color=colors['accent'],
+        hover_color=colors['accent_hover'],
+        text_color="white",
+        corner_radius=CORNER_RADIUS
     )
     confirm_btn.grid(row=0, column=0, sticky="nsew")
-    confirm_btn.bind("<Enter>", lambda e: confirm_btn.config(bg=colors['accent_hover']))
-    confirm_btn.bind("<Leave>", lambda e: confirm_btn.config(bg=colors['accent']))
     
-    # Cancel button
-    cancel_btn = tk.Button(
+    # Cancel button with rounded corners
+    cancel_btn = ctk.CTkButton(
         btn_frame,
         text="Cancel",
         command=on_cancel,
-        font=("Segoe UI", 11),
-        bg=colors['cancel'],
-        fg="white",
-        activebackground=colors['cancel_hover'],
-        activeforeground="white",
-        relief=tk.FLAT,
-        cursor="hand2",
-        bd=0
+        font=("Segoe UI", 13),
+        fg_color=colors['cancel'],
+        hover_color=colors['cancel_hover'],
+        text_color="white",
+        corner_radius=CORNER_RADIUS
     )
     cancel_btn.grid(row=0, column=2, sticky="nsew")
-    cancel_btn.bind("<Enter>", lambda e: cancel_btn.config(bg="#c42b1c"))  # Red like close button
-    cancel_btn.bind("<Leave>", lambda e: cancel_btn.config(bg=colors['cancel']))
     
     # Bind keys
     root.bind('<Return>', lambda e: on_confirm())
