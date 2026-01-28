@@ -95,8 +95,8 @@ def verify_manual_push():
     root.configure(bg=colors['bg'])
     
     # Fixed window size - not resizable
-    window_width = 600
-    window_height = 180
+    window_width = 800
+    window_height = 495
     root.resizable(False, False)
     
     # Center the window
