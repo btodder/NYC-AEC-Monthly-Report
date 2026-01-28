@@ -79,3 +79,11 @@
 }
 
 /* Value labeling positioning will need logic in script (top for pos, bottom for neg) */
+
+.chart-explainer {
+    font-size: 0.75rem;
+    color: #777;
+    margin-top: 1rem;
+    font-style: italic;
+    line-height: 1.4;
+}

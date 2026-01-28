@@ -231,6 +231,10 @@ def update_html(sections, report_date_str=None):
     
     # Prepend chart to ABI content if it exists
     full_abi_content = chart_html + format_content_to_html(cleaned_abi_text)
+
+    # Append Chart Explainer
+    explainer_text = "Note: ABI is a diffusion index where 50 indicates stable conditions, >50 indicates growth, and <50 indicates contraction."
+    full_abi_content += f'<p class="chart-explainer">{explainer_text}</p>'
     
     # Construct Full ABI Section HTML
     abi_section_html = f'''
