@@ -13,47 +13,43 @@ def get_windows_theme():
         winreg.CloseKey(key)
         return "light" if value == 1 else "dark"
     except:
-        return "light"  # Fallback to light theme
+        return "light"
 
 def get_theme_colors(theme):
     """Return color scheme based on system theme."""
     if theme == "dark":
         return {
-            'bg': '#202020',
+            'bg': '#1e1e1e',
             'surface': '#2d2d2d',
             'text': '#ffffff',
             'subtext': '#b4b4b4',
-            'accent': '#60cdff',
-            'accent_hover': '#4cb8eb',
-            'cancel': '#5a5a5a',
-            'cancel_hover': '#6e6e6e',
+            'accent': '#0078d4',  # Windows blue - good contrast with white
+            'accent_hover': '#1a86d9',
+            'cancel': '#484848',
+            'cancel_hover': '#5a5a5a',
             'border': '#3f3f3f'
         }
     else:
         return {
-            'bg': '#f3f3f3',
+            'bg': '#f0f0f0',
             'surface': '#ffffff',
             'text': '#1f1f1f',
             'subtext': '#5f5f5f',
             'accent': '#0067c0',
             'accent_hover': '#005a9e',
-            'cancel': '#8a8a8a',
-            'cancel_hover': '#737373',
-            'border': '#e5e5e5'
+            'cancel': '#6e6e6e',
+            'cancel_hover': '#5a5a5a',
+            'border': '#d0d0d0'
         }
 
 def apply_dark_title_bar(root):
     """Apply dark title bar on Windows 10/11."""
     try:
         import ctypes
-        root.update()  # Force window to be realized
+        root.update()
         hwnd = ctypes.windll.user32.GetParent(root.winfo_id())
-        # DWMWA_USE_IMMERSIVE_DARK_MODE = 20
         value = ctypes.c_int(1)
-        ctypes.windll.dwmapi.DwmSetWindowAttribute(
-            hwnd, 20, ctypes.byref(value), ctypes.sizeof(value)
-        )
-        # Force redraw
+        ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, 20, ctypes.byref(value), ctypes.sizeof(value))
         root.withdraw()
         root.deiconify()
     except:
@@ -64,7 +60,6 @@ def verify_manual_push():
     Verification popup for manual git push commands with commit message editing.
     Returns 0 if approved, 1 if rejected.
     """
-    # Get the repository directory
     repo_dir = os.path.dirname(os.path.abspath(__file__))
     
     # Read the last commit message
@@ -87,56 +82,46 @@ def verify_manual_push():
     colors = get_theme_colors(theme)
     
     root = tk.Tk()
-    root.title("Git Push")
+    root.title("")  # Empty title bar text
     root.configure(bg=colors['bg'])
     
-    # Center the window - LARGER HEIGHT for bigger buttons
-    window_width = 540
-    window_height = 240
+    # Fixed window size - not resizable
+    window_width = 480
+    window_height = 180
+    root.resizable(False, False)
+    
+    # Center the window
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
     x = (screen_width - window_width) // 2
     y = (screen_height - window_height) // 2
     root.geometry(f"{window_width}x{window_height}+{x}+{y}")
     
-    # Apply dark title bar AFTER window setup
+    # Apply dark title bar
     if theme == "dark":
         apply_dark_title_bar(root)
     
     # Main container
     container = tk.Frame(root, bg=colors['surface'], relief=tk.FLAT, bd=0)
-    container.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
+    container.pack(fill=tk.BOTH, expand=True, padx=1, pady=1)
     
-    # Header with icon
-    header_frame = tk.Frame(container, bg=colors['surface'])
-    header_frame.pack(pady=(25, 8))
-    
+    # Single line header
     header = tk.Label(
-        header_frame,
-        text="📤  Manual Push Detected",
-        font=("Segoe UI", 14, "bold"),
+        container,
+        text="Git Push Detected, Review Commit Message:",
+        font=("Segoe UI", 11),
         bg=colors['surface'],
         fg=colors['text']
     )
-    header.pack()
+    header.pack(pady=(25, 15))
     
-    # Subheader
-    subheader = tk.Label(
-        container,
-        text="Review and edit the commit message before pushing:",
-        font=("Segoe UI", 10),
-        bg=colors['surface'],
-        fg=colors['subtext']
-    )
-    subheader.pack(pady=(0, 15))
-    
-    # Entry field with subtle border
+    # Entry field with border - use fixed padding for consistent width
     entry_frame = tk.Frame(container, bg=colors['border'], relief=tk.FLAT, bd=0)
-    entry_frame.pack(padx=40, pady=(0, 20), fill=tk.X)
+    entry_frame.pack(padx=40, fill=tk.X)
     
     entry = tk.Entry(
         entry_frame,
-        font=("Segoe UI", 11),
+        font=("Segoe UI", 10),
         bg=colors['surface'],
         fg=colors['text'],
         relief=tk.FLAT,
@@ -144,61 +129,66 @@ def verify_manual_push():
         bd=0,
         highlightthickness=0
     )
-    entry.pack(padx=2, pady=2, fill=tk.X, ipady=10)
+    entry.pack(padx=1, pady=1, fill=tk.X, ipady=8)
     entry.insert(0, original_message)
     entry.focus_set()
     entry.select_range(0, tk.END)
     
-    def on_approve():
+    def on_confirm():
         result_dict['approved'] = True
         result_dict['message'] = entry.get()
         root.destroy()
         
-    def on_reject():
+    def on_cancel():
         result_dict['approved'] = False
         root.destroy()
     
-    # Button frame
+    # Button frame - same padding as entry field to match widths
     btn_frame = tk.Frame(container, bg=colors['surface'])
-    btn_frame.pack(pady=(5, 25))
+    btn_frame.pack(padx=40, pady=(15, 25), fill=tk.X)
     
-    # Create buttons with explicit width and height
-    def create_button(parent, text, command, bg, hover_bg):
-        btn = tk.Button(
-            parent,
-            text=text,
-            command=command,
-            font=("Segoe UI", 11, "bold"),
-            bg=bg,
-            fg="white",
-            activebackground=hover_bg,
-            activeforeground="white",
-            relief=tk.FLAT,
-            cursor="hand2",
-            bd=0,
-            width=12,
-            height=2
-        )
-        
-        # Bind hover events
-        btn.bind("<Enter>", lambda e: btn.config(bg=hover_bg))
-        btn.bind("<Leave>", lambda e: btn.config(bg=bg))
-        
-        return btn
+    # Buttons that fill the frame width equally
+    confirm_btn = tk.Button(
+        btn_frame,
+        text="Confirm",
+        command=on_confirm,
+        font=("Segoe UI", 10, "bold"),
+        bg=colors['accent'],
+        fg="white",
+        activebackground=colors['accent_hover'],
+        activeforeground="white",
+        relief=tk.FLAT,
+        cursor="hand2",
+        bd=0,
+        pady=10
+    )
+    confirm_btn.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
+    confirm_btn.bind("<Enter>", lambda e: confirm_btn.config(bg=colors['accent_hover']))
+    confirm_btn.bind("<Leave>", lambda e: confirm_btn.config(bg=colors['accent']))
     
-    # Push button
-    push_btn = create_button(btn_frame, "Push", on_approve, colors['accent'], colors['accent_hover'])
-    push_btn.pack(side=tk.LEFT, padx=8)
-    
-    # Cancel button
-    cancel_btn = create_button(btn_frame, "Cancel", on_reject, colors['cancel'], colors['cancel_hover'])
-    cancel_btn.pack(side=tk.LEFT, padx=8)
+    cancel_btn = tk.Button(
+        btn_frame,
+        text="Cancel",
+        command=on_cancel,
+        font=("Segoe UI", 10, "bold"),
+        bg=colors['cancel'],
+        fg="white",
+        activebackground=colors['cancel_hover'],
+        activeforeground="white",
+        relief=tk.FLAT,
+        cursor="hand2",
+        bd=0,
+        pady=10
+    )
+    cancel_btn.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(5, 0))
+    cancel_btn.bind("<Enter>", lambda e: cancel_btn.config(bg=colors['cancel_hover']))
+    cancel_btn.bind("<Leave>", lambda e: cancel_btn.config(bg=colors['cancel']))
     
     # Bind keys
-    root.bind('<Return>', lambda e: on_approve())
-    root.bind('<Escape>', lambda e: on_reject())
+    root.bind('<Return>', lambda e: on_confirm())
+    root.bind('<Escape>', lambda e: on_cancel())
     
-    root.protocol("WM_DELETE_WINDOW", on_reject)
+    root.protocol("WM_DELETE_WINDOW", on_cancel)
     root.mainloop()
     
     if not result_dict['approved']:
