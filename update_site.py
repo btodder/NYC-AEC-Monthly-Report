@@ -92,8 +92,8 @@ def update_html(sections, report_date_str=None):
     html = replace_section(html, 'takeaways-content', sections['takeaways'])
 
     # Update Timestamp
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    html = re.sub(r'(<div id="last-updated">).*?(</div>)', f'\\1Last Updated: {timestamp}\\2', html, flags=re.DOTALL)
+    timestamp = datetime.now().strftime("%m-%d-%y")
+    html = re.sub(r'(<div id="last-updated">).*?(</div>)', f'\\1Last Updated {timestamp}\\2', html, flags=re.DOTALL)
 
     # Update Report Month if provided
     if report_date_str:

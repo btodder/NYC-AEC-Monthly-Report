@@ -156,6 +156,5 @@ footer #last-updated {
     font-size: 0.8rem;
     border: none;
     padding: 0;
-    text-transform: uppercase;
     color: var(--text-color);
 }
